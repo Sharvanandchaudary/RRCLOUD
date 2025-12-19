@@ -103,10 +103,35 @@ const Home = () => (
     </div>
     <footer style={styles.footer}>
         <div style={{display:'flex', justifyContent:'space-between', flexWrap:'wrap', maxWidth:'1300px', margin:'auto'}}>
-            <div><div style={{display:'flex', alignItems:'center', marginBottom:'20px'}}><RRIcon dark={false} /><h2 style={{color:'white', margin:0}}>RRCLOUD</h2></div></div>
-            <div style={{display:'flex', gap:'60px', marginTop:'20px'}}>
-                <div><h4 style={{color:'white', marginBottom:'20px'}}>Company</h4><Link to="/apply" style={{color:'#dc2626', textDecoration:'none', display:'block', marginBottom:'10px', fontWeight:'bold'}}>Careers (Apply)</Link></div>
+            <div>
+                <div style={{display:'flex', alignItems:'center', marginBottom:'20px'}}>
+                    <RRIcon dark={false} />
+                    <h2 style={{color:'white', margin:0}}>RRCLOUD</h2>
+                </div>
+                <p style={{color:'#94a3b8', maxWidth:'300px', lineHeight:'1.6'}}>Architecting intelligent systems for the world's most ambitious companies.</p>
             </div>
+            <div style={{display:'flex', gap:'60px', marginTop:'20px', flexWrap:'wrap'}}>
+                <div>
+                    <h4 style={{color:'white', marginBottom:'20px'}}>Company</h4>
+                    <Link to="/apply" style={{color:'#dc2626', textDecoration:'none', display:'block', marginBottom:'10px', fontWeight:'bold'}}>🚀 Careers (Apply)</Link>
+                    <Link to="/services" style={{color:'#94a3b8', textDecoration:'none', display:'block', marginBottom:'10px'}}>Solutions</Link>
+                </div>
+                <div>
+                    <h4 style={{color:'white', marginBottom:'20px'}}>Contact Us</h4>
+                    <p style={{color:'#94a3b8', margin:'0 0 10px 0'}}>📧 contact@rrcloud.com</p>
+                    <p style={{color:'#94a3b8', margin:'0 0 10px 0'}}>📞 +1 (555) 123-4567</p>
+                    <p style={{color:'#94a3b8', margin:'0 0 10px 0'}}>📍 123 Tech Street, Silicon Valley, CA</p>
+                </div>
+                <div>
+                    <h4 style={{color:'white', marginBottom:'20px'}}>Follow Us</h4>
+                    <a href="https://linkedin.com" style={{color:'#94a3b8', textDecoration:'none', display:'block', marginBottom:'10px'}}>LinkedIn</a>
+                    <a href="https://twitter.com" style={{color:'#94a3b8', textDecoration:'none', display:'block', marginBottom:'10px'}}>Twitter</a>
+                    <a href="https://github.com" style={{color:'#94a3b8', textDecoration:'none', display:'block', marginBottom:'10px'}}>GitHub</a>
+                </div>
+            </div>
+        </div>
+        <div style={{borderTop:'1px solid #334155', marginTop:'60px', paddingTop:'30px', textAlign:'center', maxWidth:'1300px', margin:'60px auto 0'}}>
+            <p style={{color:'#64748b', fontSize:'14px'}}>© 2024 RRCLOUD. All rights reserved. Built with precision and passion.</p>
         </div>
     </footer>
   </div>

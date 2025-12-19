@@ -105,6 +105,7 @@ jobs:
             --platform managed \
             --region ${{ env.GCP_REGION }} \
             --allow-unauthenticated \
+            --set-env-vars BACKEND_URL=${{ needs.deploy-backend.outputs.backend_url }} \
             --memory 256Mi \
             --cpu 1 \
             --max-instances 10 \
