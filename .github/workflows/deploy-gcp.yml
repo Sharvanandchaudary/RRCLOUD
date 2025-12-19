@@ -1,0 +1,130 @@
+name: Deploy to GCP Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: us-central1
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+
+      - name: Build Backend Image
+        run: |
+          cd backend
+          docker build -t gcr.io/${{ env.GCP_PROJECT_ID }}/rrcloud-backend:${{ github.sha }} .
+          docker tag gcr.io/${{ env.GCP_PROJECT_ID }}/rrcloud-backend:${{ github.sha }} gcr.io/${{ env.GCP_PROJECT_ID }}/rrcloud-backend:latest
+
+      - name: Push Backend Image
+        run: |
+          docker push gcr.io/${{ env.GCP_PROJECT_ID }}/rrcloud-backend:${{ github.sha }}
+          docker push gcr.io/${{ env.GCP_PROJECT_ID }}/rrcloud-backend:latest
+
+      - name: Deploy Backend to Cloud Run
+        run: |
+          gcloud run deploy rrcloud-backend \
+            --image gcr.io/${{ env.GCP_PROJECT_ID }}/rrcloud-backend:${{ github.sha }} \
+            --platform managed \
+            --region ${{ env.GCP_REGION }} \
+            --allow-unauthenticated \
+            --set-env-vars DATABASE_URL=${{ secrets.DATABASE_URL }},NODE_ENV=production,FRONTEND_URL=${{ secrets.FRONTEND_URL }} \
+            --memory 512Mi \
+            --cpu 1 \
+            --max-instances 10 \
+            --port 5001
+
+      - name: Get Backend URL
+        id: backend-url
+        run: |
+          BACKEND_URL=$(gcloud run services describe rrcloud-backend --platform managed --region ${{ env.GCP_REGION }} --format 'value(status.url)')
+          echo "BACKEND_URL=$BACKEND_URL" >> $GITHUB_OUTPUT
+          echo "Backend deployed at: $BACKEND_URL"
+
+    outputs:
+      backend_url: ${{ steps.backend-url.outputs.BACKEND_URL }}
+
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+
+      - name: Build Frontend Image
+        env:
+          REACT_APP_API_URL: ${{ needs.deploy-backend.outputs.backend_url }}
+        run: |
+          cd frontend
+          echo "REACT_APP_API_URL=$REACT_APP_API_URL" > .env.production
+          docker build -t gcr.io/${{ env.GCP_PROJECT_ID }}/rrcloud-frontend:${{ github.sha }} .
+          docker tag gcr.io/${{ env.GCP_PROJECT_ID }}/rrcloud-frontend:${{ github.sha }} gcr.io/${{ env.GCP_PROJECT_ID }}/rrcloud-frontend:latest
+
+      - name: Push Frontend Image
+        run: |
+          docker push gcr.io/${{ env.GCP_PROJECT_ID }}/rrcloud-frontend:${{ github.sha }}
+          docker push gcr.io/${{ env.GCP_PROJECT_ID }}/rrcloud-frontend:latest
+
+      - name: Deploy Frontend to Cloud Run
+        run: |
+          gcloud run deploy rrcloud-frontend \
+            --image gcr.io/${{ env.GCP_PROJECT_ID }}/rrcloud-frontend:${{ github.sha }} \
+            --platform managed \
+            --region ${{ env.GCP_REGION }} \
+            --allow-unauthenticated \
+            --memory 256Mi \
+            --cpu 1 \
+            --max-instances 10 \
+            --port 80
+
+      - name: Get Frontend URL
+        run: |
+          FRONTEND_URL=$(gcloud run services describe rrcloud-frontend --platform managed --region ${{ env.GCP_REGION }} --format 'value(status.url)')
+          echo "✅ Frontend deployed at: $FRONTEND_URL"
+          echo "✅ Backend available at: ${{ needs.deploy-backend.outputs.backend_url }}"
+
+  notify:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend]
+    if: always()
+    
+    steps:
+      - name: Deployment Status
+        run: |
+          echo "🚀 Deployment completed!"
+          echo "Backend: ${{ needs.deploy-backend.outputs.backend_url }}"
+          echo "Status: ${{ job.status }}"
