@@ -16,8 +16,11 @@ export default function StudentSignup() {
     if (file) data.append("resume", file);
 
     try {
-      // FIX: Use relative path so Cloud Shell Proxy handles the connection
-      const response = await fetch('/api/applications', {
+      // Get backend URL from runtime config or fall back to relative path
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const apiUrl = backendUrl ? `${backendUrl}/api/applications` : '/api/applications';
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         body: data,
       });

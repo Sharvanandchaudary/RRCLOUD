@@ -164,8 +164,11 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
 
     React.useEffect(() => {
-        // Fetch from Proxy (Relative Path)
-        axios.get("/api/applications")
+        // Get backend URL from runtime config or fall back to relative path
+        const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+        const apiUrl = backendUrl ? `${backendUrl}/api/applications` : '/api/applications';
+        
+        axios.get(apiUrl)
             .then(res => {
                 setApplicants(res.data);
                 setLoading(false);
