@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import StudentSignup from './StudentSignup';
+import StudentLogin from './StudentLogin';
 
 // --- ASSETS ---
 const IMAGES = {
@@ -226,6 +227,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/student-login" element={<StudentLogin />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/apply" element={<ApplyPage />} />
         <Route path="/services" element={<Home />} />

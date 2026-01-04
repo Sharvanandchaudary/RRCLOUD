@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 export default function StudentSignup() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', aboutMe: '' });
+  const [password, setPassword] = useState('');
   const [file, setFile] = useState(null);
 
   const handleSubmit = async (e) => {
@@ -13,6 +14,7 @@ export default function StudentSignup() {
     data.append("email", formData.email);
     data.append("phone", formData.phone);
     data.append("aboutMe", formData.aboutMe);
+    if (password) data.append('password', password);
     if (file) data.append("resume", file);
 
     try {
@@ -27,7 +29,7 @@ export default function StudentSignup() {
 
       if (response.ok) {
         alert("✅ Application Submitted Successfully!");
-        navigate('/');
+        navigate('/student-login');
       } else {
         const errorText = await response.text();
         alert("Server Error: " + errorText);
@@ -51,6 +53,7 @@ export default function StudentSignup() {
         <textarea placeholder="About Me" rows="4" style={inputStyle} onChange={e => setFormData({...formData, aboutMe: e.target.value})} />
         <label>Upload Resume:</label>
         <input type="file" onChange={e => setFile(e.target.files[0])} style={inputStyle} />
+        <input placeholder="Password (for student login)" type="password" value={password} onChange={e => setPassword(e.target.value)} style={inputStyle} />
         <button type="submit" style={{ width: '100%', padding: '15px', background: '#dc2626', color: 'white', border: 'none', borderRadius:'4px', marginTop: '20px', fontWeight: 'bold', cursor: 'pointer' }}>SUBMIT APPLICATION</button>
       </form>
     </div>

@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
+const bcrypt = require('bcrypt');
 require('dotenv').config();
 const db = require('./db');
 const fs = require('fs');
@@ -62,7 +63,7 @@ app.get('/api/applications', getApplications);
 
 /* -------------------- POST APPLICATION -------------------- */
 const submitApplication = async (req, res) => {
-  const { fullName, email, phone, aboutMe } = req.body;
+  const { fullName, email, phone, aboutMe, password } = req.body;
   const resumePath = req.file ? `/uploads/${req.file.filename}` : null;
 
   /* -------- Input Validation -------- */
@@ -73,6 +74,22 @@ const submitApplication = async (req, res) => {
   }
 
   try {
+    // If a password was provided with the application, create a user record
+    if (password) {
+      try {
+        const hashed = await bcrypt.hash(password, 10);
+        await db.query(
+          `INSERT INTO users (email, password_hash, full_name, role)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (email) DO NOTHING;`,
+          [email, hashed, fullName, 'student']
+        );
+      } catch (uerr) {
+        console.error('User create error (non-fatal):', uerr.message || uerr);
+        // proceed — user insertion failure should not block application submission
+      }
+    }
+
     const result = await db.query(
       `INSERT INTO applications
        (full_name, email, phone, about_me, resume_path)
@@ -111,6 +128,36 @@ const submitApplication = async (req, res) => {
 
 app.post('/applications', upload.single('resume'), submitApplication);
 app.post('/api/applications', upload.single('resume'), submitApplication);
+
+/* -------------------- AUTH ENDPOINTS -------------------- */
+app.post('/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+
+  try {
+    const userRes = await db.query('SELECT id, email, password_hash, full_name, role FROM users WHERE email=$1', [email]);
+    if (userRes.rowCount === 0) return res.status(401).json({ error: 'Invalid credentials' });
+    const user = userRes.rows[0];
+
+    const stored = user.password_hash || '';
+    let ok = false;
+    if (stored.startsWith('$2')) {
+      ok = await bcrypt.compare(password, stored);
+    } else {
+      // fallback to plaintext comparison for legacy accounts
+      ok = password === stored;
+    }
+
+    if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+
+    // Return basic user info (no token for now)
+    return res.json({ message: 'Login successful', user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role } });
+
+  } catch (err) {
+    console.error('/auth/login error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 /* -------------------- HEALTH CHECK -------------------- */
 app.get('/health', (req, res) => {
