@@ -20,9 +20,11 @@ export default function StudentLogin() {
 
       if (res.ok) {
         const data = await res.json();
-        alert('Login successful! Welcome ' + (data.user?.full_name || ''));
-        // TODO: store session/token; for now just redirect
-        navigate('/');
+        // Store token + user in localStorage
+        if (data.token) localStorage.setItem('auth_token', data.token);
+        if (data.user) localStorage.setItem('auth_user', JSON.stringify(data.user));
+        // Redirect to student dashboard
+        navigate('/student-dashboard');
       } else {
         const txt = await res.text();
         alert('Login failed: ' + txt);

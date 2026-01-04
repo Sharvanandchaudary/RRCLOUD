@@ -3,6 +3,7 @@ import axios from 'axios';
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import StudentSignup from './StudentSignup';
 import StudentLogin from './StudentLogin';
+import React from 'react';
 
 // --- ASSETS ---
 const IMAGES = {
@@ -214,6 +215,72 @@ const AdminDashboard = () => {
     );
 };
 
+// --- STUDENT DASHBOARD ---
+const StudentDashboard = () => {
+    const navigate = useNavigate();
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    React.useEffect(() => {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            navigate('/student-login');
+            return;
+        }
+        const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+        const apiUrl = backendUrl ? `${backendUrl}/auth/me` : '/auth/me';
+
+        fetch(apiUrl, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Unauthorized');
+            return res.json();
+        })
+        .then(data => {
+            setUser(data.user);
+            // keep local cache in sync
+            if (data.user) localStorage.setItem('auth_user', JSON.stringify(data.user));
+            setLoading(false);
+        })
+        .catch(err => {
+            console.error('Auth fetch failed', err);
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('auth_user');
+            navigate('/student-login');
+        });
+    }, [navigate]);
+
+    const handleLogout = () => {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
+        navigate('/student-login');
+    };
+
+    if (loading) return (
+        <div style={{minHeight:'80vh', display:'flex', alignItems:'center', justifyContent:'center'}}>
+            <div>Loading dashboard...</div>
+        </div>
+    );
+
+    return (
+        <div style={{minHeight:'80vh', padding:40}}>
+            <FontLoader /><Navbar />
+            <div style={{maxWidth:800, margin:'40px auto', background:'white', padding:30}}>
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                    <h2>Welcome, {user?.full_name || user?.email || 'Student'}</h2>
+                    <button onClick={handleLogout} style={{padding:'8px 14px', background:'#dc2626', color:'white', border:'none', borderRadius:6}}>Logout</button>
+                </div>
+                <p>Your dashboard coming soon. You applied with: <b>{user?.email}</b></p>
+                <div style={{marginTop:20}}>
+                    <h4>Account Details</h4>
+                    <pre style={{background:'#f8fafc', padding:12}}>{JSON.stringify(user, null, 2)}</pre>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // --- WRAPPER FOR APPLY PAGE ---
 const ApplyPage = () => (
     <div style={{background:'#f8fafc', minHeight:'100vh'}}>
@@ -228,6 +295,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/student-login" element={<StudentLogin />} />
+        <Route path="/student-dashboard" element={<StudentDashboard />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/apply" element={<ApplyPage />} />
         <Route path="/services" element={<Home />} />
