@@ -19,7 +19,7 @@ app.use('/uploads', express.static('uploads'));
 /* -------------------- ROOT (optional but useful) -------------------- */
 app.get('/', (req, res) => {
   res.json({
-    service: 'RRCLOUD Backend',
+    service: 'ZgenAi Backend',
     status: 'running',
     endpoints: {
       health: '/health',

@@ -6,7 +6,7 @@ param(
     [string]$Region = "us-central1"
 )
 
-Write-Host "🚀 Starting deployment to GCP Cloud Run" -ForegroundColor Green
+Write-Host "🚀 Starting deployment to GCP Cloud Run (ZgenAi)" -ForegroundColor Green
 Write-Host "Project: $ProjectId"
 Write-Host "Region: $Region"
 

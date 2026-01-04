@@ -2,7 +2,7 @@
 # Initialize RRCloud Database with Tables
 # Run this AFTER creating Cloud SQL instance
 
-echo "🗄️  Initializing RRCloud Database..."
+echo "🗄️  Initializing ZgenAi Database..."
 echo ""
 
 # Get project info
@@ -91,7 +91,7 @@ echo "   ✅ users - For admin login"
 echo "   ✅ applications - For student signups"
 echo ""
 echo "Default Admin User:"
-echo "   📧 Email: admin@rrcloud.com"
+echo "   📧 Email: admin@zgenai.com"
 echo "   🔑 Password: admin123"
 echo ""
 echo "🚀 Database is ready for deployment!"

@@ -51,7 +51,7 @@ fi
 
 # 3. Check Service Account
 echo "3️⃣  Checking Service Account..."
-SA_EXISTS=$(gcloud iam service-accounts list --filter="email:github-actions@$PROJECT_ID.iam.gserviceaccount.com" --format="value(email)" 2>/dev/null)
+SA_EXISTS=$(gcloud iam.service-accounts list --filter="email:github-actions@$PROJECT_ID.iam.gserviceaccount.com" --format="value(email)" 2>/dev/null)
 
 if [ -n "$SA_EXISTS" ]; then
     echo "   ✅ Service account exists"

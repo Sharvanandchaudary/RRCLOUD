@@ -1,5 +1,5 @@
 # Test Connection Script
-Write-Host "🧪 Testing RRCloud Connection..." -ForegroundColor Cyan
+Write-Host "🧪 Testing ZgenAi Connection..." -ForegroundColor Cyan
 
 # Test 1: Check if backend port is available
 Write-Host "`n1️⃣ Testing backend health..." -ForegroundColor Yellow

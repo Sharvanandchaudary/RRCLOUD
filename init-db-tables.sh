@@ -64,7 +64,7 @@ if [ $? -eq 0 ]; then
     echo "   • applications"
     echo ""
     echo "🔑 Default Admin Credentials:"
-    echo "   Email: admin@rrcloud.com"
+    echo "   Email: admin@zgenai.com"
     echo "   Password: admin123"
     echo ""
 else

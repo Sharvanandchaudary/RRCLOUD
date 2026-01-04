@@ -1,4 +1,4 @@
-# 🚀 Complete CI/CD Setup Guide for RRCloud
+# 🚀 Complete CI/CD Setup Guide for ZgenAi
 
 ## ✅ Step 1: Code Pushed to GitHub
 Your code is now at: https://github.com/Sharvanandchaudary/RRCLOUD

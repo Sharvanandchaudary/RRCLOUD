@@ -1,6 +1,6 @@
 # Complete Local Testing Script
 Write-Host "================================" -ForegroundColor Cyan
-Write-Host "   RRCloud Local Test Setup" -ForegroundColor Cyan
+Write-Host "   ZgenAi Local Test Setup" -ForegroundColor Cyan
 Write-Host "================================`n" -ForegroundColor Cyan
 
 $backendPath = "C:\Users\vsaravan\OneDrive - Cadence Design Systems Inc\Desktop\RRCLOUD\backend"

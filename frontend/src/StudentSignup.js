@@ -43,7 +43,7 @@ export default function StudentSignup() {
 
   return (
     <div style={formStyle}>
-      <h2 style={{textAlign:'center', color:'#0f172a'}}>Career Application</h2>
+      <h2 style={{textAlign:'center', color:'#0f172a'}}>ZgenAi Career Application</h2>
       <form onSubmit={handleSubmit}>
         <input placeholder="Full Name" required style={inputStyle} onChange={e => setFormData({...formData, fullName: e.target.value})} />
         <input placeholder="Email" type="email" required style={inputStyle} onChange={e => setFormData({...formData, email: e.target.value})} />

@@ -64,7 +64,7 @@ const FontLoader = () => (
 
 const Navbar = () => (
   <nav style={styles.navbar}>
-    <Link to="/" style={styles.navBrand}><RRIcon dark={true} /> RRCLOUD</Link>
+    <Link to="/" style={styles.navBrand}><RRIcon dark={true} /> ZgenAi</Link>
     <div style={styles.navLinks}>
         <Link to="/" style={styles.navLink}>Home</Link>
         <Link to="/services" style={styles.navLink}>Expertise</Link>
@@ -106,7 +106,7 @@ const Home = () => (
             <div>
                 <div style={{display:'flex', alignItems:'center', marginBottom:'20px'}}>
                     <RRIcon dark={false} />
-                    <h2 style={{color:'white', margin:0}}>RRCLOUD</h2>
+                    <h2 style={{color:'white', margin:0}}>ZgenAi</h2>
                 </div>
                 <p style={{color:'#94a3b8', maxWidth:'300px', lineHeight:'1.6'}}>Architecting intelligent systems for the world's most ambitious companies.</p>
             </div>
@@ -118,7 +118,7 @@ const Home = () => (
                 </div>
                 <div>
                     <h4 style={{color:'white', marginBottom:'20px'}}>Contact Us</h4>
-                    <p style={{color:'#94a3b8', margin:'0 0 10px 0'}}>📧 contact@rrcloud.com</p>
+                    <p style={{color:'#94a3b8', margin:'0 0 10px 0'}}>📧 contact@zgenai.com</p>
                     <p style={{color:'#94a3b8', margin:'0 0 10px 0'}}>📞 +1 (555) 123-4567</p>
                     <p style={{color:'#94a3b8', margin:'0 0 10px 0'}}>📍 123 Tech Street, Silicon Valley, CA</p>
                 </div>
@@ -131,7 +131,7 @@ const Home = () => (
             </div>
         </div>
         <div style={{borderTop:'1px solid #334155', marginTop:'60px', paddingTop:'30px', textAlign:'center', maxWidth:'1300px', margin:'60px auto 0'}}>
-            <p style={{color:'#64748b', fontSize:'14px'}}>© 2024 RRCLOUD. All rights reserved. Built with precision and passion.</p>
+            <p style={{color:'#64748b', fontSize:'14px'}}>© 2024 ZgenAi. All rights reserved. Built with precision and passion.</p>
         </div>
     </footer>
   </div>
@@ -142,7 +142,7 @@ const Login = () => {
     const [password, setPass] = useState('');
     const navigate = useNavigate();
     const handleLogin = async () => {
-        if(email === 'admin@rrcloud.com' && password === 'admin123') navigate('/admin');
+        if(email === 'admin@zgenai.com' && password === 'admin123') navigate('/admin');
         else alert('Invalid Credentials for Demo');
     };
     return (

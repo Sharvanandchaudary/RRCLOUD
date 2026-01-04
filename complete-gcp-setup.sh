@@ -1,8 +1,8 @@
 #!/bin/bash
-# Complete RRCloud GCP Setup Script
+# Complete ZgenAi GCP Setup Script
 # Run this in GCP Cloud Shell
 
-echo "🚀 RRCloud Complete GCP Setup"
+echo "🚀 ZgenAi Complete GCP Setup"
 echo "══════════════════════════════════════════════════════════"
 echo ""
 
@@ -178,7 +178,7 @@ echo "📊 Database Status:"
 echo "   ✅ Cloud SQL Instance: rrcloud-db"
 echo "   ✅ Database: sharvanandchaudhary"
 echo "   ✅ Tables: users, applications"
-echo "   ✅ Default Admin: admin@rrcloud.com / admin123"
+echo "   ✅ Default Admin: admin@zgenai.com / admin123"
 echo ""
 echo "🚀 Next Steps:"
 echo "   1. Add all 4 secrets to GitHub"

@@ -8,7 +8,7 @@ set -e
 PROJECT_ID=${1:-rrcloud-platform}
 REGION=${2:-us-central1}
 
-echo "🚀 Starting deployment to GCP Cloud Run"
+echo "🚀 Starting deployment to GCP Cloud Run (ZgenAi)"
 echo "Project: $PROJECT_ID"
 echo "Region: $REGION"
 

@@ -17,10 +17,10 @@ async function debug() {
 
     // 2. Check if admin user exists
     console.log("✅ Table exists. Checking for Admin user...");
-    const res = await pool.query("SELECT * FROM users WHERE email = 'admin@rrcloud.com'");
+    const res = await pool.query("SELECT * FROM users WHERE email = 'admin@zgenai.com'");
 
     if (res.rows.length === 0) {
-        console.log("❌ ERROR: User 'admin@rrcloud.com' was NOT found.");
+        console.log("❌ ERROR: User 'admin@zgenai.com' was NOT found.");
         console.log("   (You need to run setup_db.js again)");
     } else {
         console.log("✅ SUCCESS: Found Admin User!");

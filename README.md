@@ -1,4 +1,4 @@
-# RRCloud Platform 🚀
+# ZgenAi Platform 🚀
 
 Full-stack career application platform with student signup and admin dashboard, built with React and Node.js, deployed on Google Cloud Platform.
 
@@ -240,4 +240,4 @@ MIT License - see LICENSE file for details
 
 ---
 
-**Built with ❤️ for RRCloud Platform**
+**Built with ❤️ for ZgenAi Platform**
