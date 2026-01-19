@@ -538,7 +538,61 @@ app.post('/api/admin/reset-credentials', async (req, res) => {
 
 /* -------------------- START SERVER -------------------- */
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+
+// Initialize database tables on startup
+const initDB = async () => {
+  try {
+    console.log('🗄️  Initializing database tables...');
+    
+    // Create users table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        full_name VARCHAR(255),
+        role VARCHAR(50) DEFAULT 'student',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Create applications table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS applications (
+        id SERIAL PRIMARY KEY,
+        full_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        phone VARCHAR(50),
+        about_me TEXT,
+        resume_path VARCHAR(500),
+        status VARCHAR(50) DEFAULT 'pending',
+        is_approved BOOLEAN DEFAULT FALSE,
+        approved_date TIMESTAMP,
+        approved_by VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Insert default admin
+    await db.query(
+      `INSERT INTO users (email, password_hash, full_name, role)
+       VALUES ('admin@zgenai.com', 'admin123', 'System Admin', 'admin')
+       ON CONFLICT (email) DO NOTHING`
+    );
+    
+    console.log('✅ Database tables initialized');
+  } catch (err) {
+    console.error('❌ Database initialization error:', err.message);
+  }
+};
+
+// Initialize before starting server
+initDB().then(() => {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}).catch(err => {
+  console.error('Failed to initialize:', err);
+  process.exit(1);
 });
