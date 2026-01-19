@@ -131,6 +131,137 @@ const submitApplication = async (req, res) => {
 app.post('/applications', upload.single('resume'), submitApplication);
 app.post('/api/applications', upload.single('resume'), submitApplication);
 
+/* -------------------- GET SINGLE APPLICATION BY EMAIL -------------------- */
+app.get('/api/applications/:email', verifyToken, async (req, res) => {
+  const { email } = req.params;
+  
+  try {
+    const result = await db.query(
+      'SELECT * FROM applications WHERE email = $1',
+      [email]
+    );
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('GET /api/applications/:email error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/* -------------------- UPDATE APPLICATION -------------------- */
+app.put('/api/applications/:id', verifyToken, async (req, res) => {
+  const { id } = req.params;
+  const { full_name, phone, about_me } = req.body;
+
+  try {
+    const result = await db.query(
+      `UPDATE applications 
+       SET full_name = COALESCE($1, full_name),
+           phone = COALESCE($2, phone),
+           about_me = COALESCE($3, about_me),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $4
+       RETURNING *`,
+      [full_name || null, phone || null, about_me || null, id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('PUT /api/applications/:id error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/* -------------------- APPROVE APPLICATION & CREATE STUDENT ACCOUNT -------------------- */
+app.post('/api/applications/:id/approve', async (req, res) => {
+  const { id } = req.params;
+  const { password, approvedBy } = req.body;
+
+  if (!password) {
+    return res.status(400).json({ error: 'Password is required' });
+  }
+
+  try {
+    // Fetch application
+    const appResult = await db.query('SELECT * FROM applications WHERE id = $1', [id]);
+    if (appResult.rowCount === 0) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    const application = appResult.rows[0];
+    const hashed = await bcrypt.hash(password, 10);
+
+    // Create user account
+    try {
+      await db.query(
+        `INSERT INTO users (email, password_hash, full_name, role)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (email) DO UPDATE SET password_hash = $2`,
+        [application.email, hashed, application.full_name, 'student']
+      );
+    } catch (uerr) {
+      console.error('User creation error:', uerr.message);
+      return res.status(500).json({ error: 'Failed to create user account' });
+    }
+
+    // Update application as approved
+    const updatedApp = await db.query(
+      `UPDATE applications 
+       SET is_approved = TRUE, 
+           approved_date = CURRENT_TIMESTAMP,
+           approved_by = $1,
+           status = 'approved'
+       WHERE id = $2
+       RETURNING *`,
+      [approvedBy || 'admin@rrcloud.com', id]
+    );
+
+    res.json({
+      message: 'Student approved and account created',
+      application: updatedApp.rows[0]
+    });
+
+  } catch (err) {
+    console.error('POST /api/applications/:id/approve error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/* -------------------- REJECT APPLICATION -------------------- */
+app.post('/api/applications/:id/reject', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await db.query(
+      `UPDATE applications 
+       SET status = 'rejected'
+       WHERE id = $1
+       RETURNING *`,
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    res.json({
+      message: 'Application rejected',
+      application: result.rows[0]
+    });
+  } catch (err) {
+    console.error('POST /api/applications/:id/reject error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 /* -------------------- AUTH ENDPOINTS -------------------- */
 
 // Simple middleware to verify Bearer JWT
@@ -188,6 +319,51 @@ app.get('/auth/me', verifyToken, async (req, res) => {
     res.json({ user: userRes.rows[0] });
   } catch (err) {
     console.error('/auth/me error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// New endpoint to change password
+app.post('/auth/change-password', verifyToken, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const userId = req.user?.id;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Both current and new passwords are required' });
+  }
+
+  try {
+    // Fetch current user
+    const userRes = await db.query('SELECT id, password_hash FROM users WHERE id=$1', [userId]);
+    if (userRes.rowCount === 0) return res.status(404).json({ error: 'User not found' });
+
+    const user = userRes.rows[0];
+    const stored = user.password_hash || '';
+
+    // Verify current password
+    let passwordMatch = false;
+    if (stored.startsWith('$2')) {
+      passwordMatch = await bcrypt.compare(currentPassword, stored);
+    } else {
+      passwordMatch = currentPassword === stored;
+    }
+
+    if (!passwordMatch) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await db.query(
+      'UPDATE users SET password_hash = $1 WHERE id = $2',
+      [hashedNewPassword, userId]
+    );
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (err) {
+    console.error('/auth/change-password error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

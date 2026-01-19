@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS applications (
 
 -- Insert Default Admin User
 INSERT INTO users (email, password_hash, full_name, role)
-VALUES ('admin@rrcloud.com', 'admin123', 'System Admin', 'admin')
+VALUES ('admin@rrcloud.com', 'RRCloud2024Secure!', 'System Admin', 'admin')
 ON CONFLICT (email) DO NOTHING;
 
 -- Verify
@@ -178,7 +178,7 @@ echo "📊 Database Status:"
 echo "   ✅ Cloud SQL Instance: rrcloud-db"
 echo "   ✅ Database: sharvanandchaudhary"
 echo "   ✅ Tables: users, applications"
-echo "   ✅ Default Admin: admin@zgenai.com / admin123"
+echo "   ✅ Default Admin: admin@rrcloud.com / RRCloud2024Secure!"
 echo ""
 echo "🚀 Next Steps:"
 echo "   1. Add all 4 secrets to GitHub"

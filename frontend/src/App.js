@@ -3,6 +3,9 @@ import axios from 'axios';
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import StudentSignup from './StudentSignup';
 import StudentLogin from './StudentLogin';
+import StudentDashboard from './StudentDashboard';
+import AdminStudentManagement from './AdminStudentManagement';
+import AccountSetup from './AccountSetup';
 import React from 'react';
 
 // --- ASSETS ---
@@ -144,7 +147,7 @@ const Login = () => {
     const [password, setPass] = useState('');
     const navigate = useNavigate();
     const handleLogin = async () => {
-        if(email === 'admin@zgenai.com' && password === 'admin123') navigate('/admin');
+        if(email === 'admin@rrcloud.com' && password === 'RRCloud2024Secure!') navigate('/admin');
         else alert('Invalid Credentials for Demo');
     };
     return (
@@ -162,120 +165,46 @@ const Login = () => {
 
 // --- ADMIN DASHBOARD (Corrected Relative Path) ---
 const AdminDashboard = () => {
-    const [applicants, setApplicants] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('students');
 
-    React.useEffect(() => {
-        // Get backend URL from runtime config or fall back to relative path
-        const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
-        const apiUrl = backendUrl ? `${backendUrl}/api/applications` : '/api/applications';
-        
-        axios.get(apiUrl)
-            .then(res => {
-                setApplicants(res.data);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error(err);
-                setLoading(false);
-            });
-    }, []);
-
-    const dashboardStyle = { padding: '40px', fontFamily: "'Outfit', sans-serif", backgroundColor: '#f4f6f8', minHeight: '100vh' };
-    const tableStyle = { width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', marginTop:'20px' };
-    const thStyle = { backgroundColor: '#0f172a', color: 'white', padding: '15px', textAlign: 'left' };
-    const tdStyle = { padding: '15px', borderBottom: '1px solid #e2e8f0', color: '#333' };
+    const dashboardStyle = { padding: '0', fontFamily: "'Outfit', sans-serif", backgroundColor: '#f4f6f8', minHeight: '100vh' };
+    const tabsStyle = { 
+        display: 'flex', 
+        gap: '0', 
+        background: 'white', 
+        borderBottom: '2px solid #e2e8f0',
+        padding: '0 40px',
+        maxWidth: '1200px',
+        margin: '0 auto'
+    };
+    const tabStyle = {
+        padding: '15px 20px',
+        cursor: 'pointer',
+        fontWeight: '600',
+        fontSize: '15px',
+        color: '#64748b',
+        borderBottom: activeTab === 'students' ? '3px solid #3b82f6' : 'none',
+        transition: '0.3s'
+    };
 
     return (
         <div style={dashboardStyle}>
             <FontLoader /><Navbar />
-            <div style={{maxWidth:'1200px', margin:'auto'}}>
-                <h1>👨‍💻 Admin Dashboard</h1>
-                {loading ? <p>Loading data...</p> : (
-                    <table style={tableStyle}>
-                        <thead><tr><th style={thStyle}>Date</th><th style={thStyle}>Name</th><th style={thStyle}>Email</th><th style={thStyle}>Resume</th></tr></thead>
-                        <tbody>
-                            {applicants.map((app) => (
-                                <tr key={app.id}>
-                                    <td style={tdStyle}>{new Date(app.created_at).toLocaleDateString()}</td>
-                                    <td style={tdStyle}><b>{app.full_name}</b></td>
-                                    <td style={tdStyle}>{app.email}</td>
-                                    <td style={tdStyle}>
-                                        {app.resume_path ? (
-                                            <a href={app.resume_path} target="_blank" rel="noopener noreferrer" style={{color:'#0f172a', fontWeight:'bold'}}>📄 Download</a>
-                                        ) : <span style={{color:'#999'}}>No File</span>}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
-        </div>
-    );
-};
-
-// --- STUDENT DASHBOARD ---
-const StudentDashboard = () => {
-    const navigate = useNavigate();
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    React.useEffect(() => {
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-            navigate('/student-login');
-            return;
-        }
-        const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
-        const apiUrl = backendUrl ? `${backendUrl}/auth/me` : '/auth/me';
-
-        fetch(apiUrl, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        })
-        .then(res => {
-            if (!res.ok) throw new Error('Unauthorized');
-            return res.json();
-        })
-        .then(data => {
-            setUser(data.user);
-            // keep local cache in sync
-            if (data.user) localStorage.setItem('auth_user', JSON.stringify(data.user));
-            setLoading(false);
-        })
-        .catch(err => {
-            console.error('Auth fetch failed', err);
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('auth_user');
-            navigate('/student-login');
-        });
-    }, [navigate]);
-
-    const handleLogout = () => {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_user');
-        navigate('/student-login');
-    };
-
-    if (loading) return (
-        <div style={{minHeight:'80vh', display:'flex', alignItems:'center', justifyContent:'center'}}>
-            <div>Loading dashboard...</div>
-        </div>
-    );
-
-    return (
-        <div style={{minHeight:'80vh', padding:40}}>
-            <FontLoader /><Navbar />
-            <div style={{maxWidth:800, margin:'40px auto', background:'white', padding:30}}>
-                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                    <h2>Welcome, {user?.full_name || user?.email || 'Student'}</h2>
-                    <button onClick={handleLogout} style={{padding:'8px 14px', background:'#dc2626', color:'white', border:'none', borderRadius:6}}>Logout</button>
+            <div style={{maxWidth:'1200px', margin:'auto', padding:'0 40px'}}>
+                <div style={{display:'flex', alignItems:'center', gap:'20px', margin:'20px 0'}}>
+                    <h1 style={{margin:0}}>👨‍💼 Admin Control Panel</h1>
                 </div>
-                <p>Your dashboard coming soon. You applied with: <b>{user?.email}</b></p>
-                <div style={{marginTop:20}}>
-                    <h4>Account Details</h4>
-                    <pre style={{background:'#f8fafc', padding:12}}>{JSON.stringify(user, null, 2)}</pre>
+
+                <div style={tabsStyle}>
+                    <div 
+                        style={{...tabStyle, color: activeTab === 'students' ? '#3b82f6' : '#64748b'}}
+                        onClick={() => setActiveTab('students')}
+                    >
+                        📚 Student Management
+                    </div>
                 </div>
+
+                {activeTab === 'students' && <AdminStudentManagement />}
             </div>
         </div>
     );
@@ -295,6 +224,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/student-login" element={<StudentLogin />} />
+        <Route path="/account-setup" element={<AccountSetup />} />
         <Route path="/student-dashboard" element={<StudentDashboard />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/apply" element={<ApplyPage />} />

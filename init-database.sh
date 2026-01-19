@@ -57,12 +57,15 @@ CREATE TABLE IF NOT EXISTS applications (
   about_me TEXT,
   resume_path VARCHAR(500),
   status VARCHAR(50) DEFAULT 'pending',
+  is_approved BOOLEAN DEFAULT FALSE,
+  approved_date TIMESTAMP,
+  approved_by VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Insert Default Admin User
 INSERT INTO users (email, password_hash, full_name, role)
-VALUES ('admin@rrcloud.com', 'admin123', 'System Admin', 'admin')
+VALUES ('admin@rrcloud.com', 'RRCloud2024Secure!', 'System Admin', 'admin')
 ON CONFLICT (email) DO NOTHING;
 
 -- Verify
@@ -91,8 +94,8 @@ echo "   ✅ users - For admin login"
 echo "   ✅ applications - For student signups"
 echo ""
 echo "Default Admin User:"
-echo "   📧 Email: admin@zgenai.com"
-echo "   🔑 Password: admin123"
+echo "   📧 Email: admin@rrcloud.com"
+echo "   🔑 Password: RRCloud2024Secure!"
 echo ""
 echo "🚀 Database is ready for deployment!"
 echo "   Your app will now store data in PostgreSQL"
