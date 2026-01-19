@@ -490,6 +490,35 @@ app.get('/health', (req, res) => {
   });
 });
 
+/* -------------------- RESET ADMIN (TEMPORARY - FOR SETUP ONLY) -------------------- */
+app.post('/api/admin/reset-credentials', async (req, res) => {
+  // This endpoint should be removed in production
+  // It's only for emergency credential reset
+  try {
+    const email = 'admin@zgenai.com';
+    const password = 'admin123'; // Plaintext for legacy fallback
+    
+    // Delete existing admin
+    await db.query('DELETE FROM users WHERE email = $1', [email]);
+    
+    // Insert new admin
+    await db.query(
+      'INSERT INTO users (email, password_hash, full_name, role) VALUES ($1, $2, $3, $4)',
+      [email, password, 'System Admin', 'admin']
+    );
+
+    res.json({ 
+      message: 'Admin credentials reset',
+      email: email,
+      password: password 
+    });
+
+  } catch (err) {
+    console.error('Admin reset error:', err);
+    res.status(500).json({ error: 'Failed to reset admin credentials' });
+  }
+});
+
 /* -------------------- START SERVER -------------------- */
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, '0.0.0.0', () => {
