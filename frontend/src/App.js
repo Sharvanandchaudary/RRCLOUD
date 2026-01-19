@@ -146,7 +146,7 @@ const Login = () => {
     const [password, setPass] = useState('');
     const navigate = useNavigate();
     const handleLogin = async () => {
-        if(email === 'admin@rrcloud.com' && password === 'RRCloud2024Secure!') navigate('/admin');
+        if(email === 'admin@zgenai.com' && password === 'admin123') navigate('/admin');
         else alert('Invalid Credentials for Demo');
     };
     return (

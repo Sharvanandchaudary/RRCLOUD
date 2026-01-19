@@ -368,31 +368,6 @@ app.post('/auth/change-password', verifyToken, async (req, res) => {
   }
 });
 
-/* -------------------- ADMIN RESET ENDPOINT (TEMPORARY) -------------------- */
-app.post('/admin-reset-password', async (req, res) => {
-  try {
-    const hashedPassword = await bcrypt.hash('RRCloud2024Secure!', 10);
-    
-    const result = await db.query(
-      `INSERT INTO users (email, password_hash, full_name, role)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (email) DO UPDATE SET password_hash = $2
-       RETURNING email, full_name, role`,
-      ['admin@rrcloud.com', hashedPassword, 'System Admin', 'admin']
-    );
-
-    res.json({ 
-      message: 'Admin credentials reset successfully',
-      email: 'admin@rrcloud.com',
-      password: 'RRCloud2024Secure!',
-      user: result.rows[0]
-    });
-  } catch (err) {
-    console.error('Admin reset error:', err);
-    res.status(500).json({ error: 'Failed to reset admin password' });
-  }
-});
-
 /* -------------------- HEALTH CHECK -------------------- */
 app.get('/health', (req, res) => {
   res.status(200).json({

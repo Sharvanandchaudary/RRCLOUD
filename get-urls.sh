@@ -73,8 +73,8 @@ if [ -n "$FRONTEND_URL" ] && [ -n "$BACKEND_URL" ]; then
     echo "1. Open: $FRONTEND_URL"
     echo "2. Click 'Apply Now' to test signup form"
     echo "3. Admin login:"
-    echo "   Email: admin@rrcloud.com"
-    echo "   Password: RRCloud2024Secure!"
+    echo "   Email: admin@zgenai.com"
+    echo "   Password: admin123"
     echo ""
 elif [ -n "$BACKEND_URL" ]; then
     echo "⚠️  Only backend deployed"

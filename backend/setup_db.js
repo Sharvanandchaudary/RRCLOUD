@@ -42,10 +42,10 @@ async function setup() {
     // 3. Insert Admin User
     await pool.query(`
       INSERT INTO users (email, password_hash, full_name, role)
-      VALUES ('admin@rrcloud.com', 'RRCloud2024Secure!', 'System Admin', 'admin')
+      VALUES ('admin@zgenai.com', 'admin123', 'System Admin', 'admin')
       ON CONFLICT (email) DO NOTHING;
     `);
-    console.log("✅ Admin user created: admin@rrcloud.com / RRCloud2024Secure!");
+    console.log("✅ Admin user created: admin@zgenai.com / admin123");
 
     // 4. Verify tables
     const usersRes = await pool.query("SELECT COUNT(*) FROM users");
