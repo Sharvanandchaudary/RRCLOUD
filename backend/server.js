@@ -19,6 +19,84 @@ app.use(cors({
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
+// Auto-initialize database on startup (v2)
+async function ensureDatabase() {
+  try {
+    console.log('🗄️  Checking database schema...');
+    
+    // Check if users table exists
+    const checkUsers = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'users'
+      )
+    `);
+    
+    if (!checkUsers.rows[0].exists) {
+      console.log('Creating users table...');
+      await db.query(`
+        CREATE TABLE users (
+          id SERIAL PRIMARY KEY,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          password_hash VARCHAR(255) NOT NULL,
+          full_name VARCHAR(255),
+          role VARCHAR(50) DEFAULT 'student',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+    }
+    
+    // Check if applications table exists
+    const checkApps = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'applications'
+      )
+    `);
+    
+    if (!checkApps.rows[0].exists) {
+      console.log('Creating applications table...');
+      await db.query(`
+        CREATE TABLE applications (
+          id SERIAL PRIMARY KEY,
+          full_name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          phone VARCHAR(50),
+          about_me TEXT,
+          resume_path VARCHAR(500),
+          status VARCHAR(50) DEFAULT 'pending',
+          is_approved BOOLEAN DEFAULT FALSE,
+          approved_date TIMESTAMP,
+          approved_by VARCHAR(255),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+    }
+    
+    // Check if admin exists
+    const checkAdmin = await db.query(
+      'SELECT * FROM users WHERE email = $1',
+      ['admin@zgenai.com']
+    );
+    
+    if (checkAdmin.rowCount === 0) {
+      console.log('Creating admin user...');
+      await db.query(
+        `INSERT INTO users (email, password_hash, full_name, role)
+         VALUES ($1, $2, $3, $4)`,
+        ['admin@zgenai.com', 'admin123', 'System Admin', 'admin']
+      );
+    }
+    
+    console.log('✅ Database schema is ready');
+  } catch (err) {
+    console.error('❌ Database setup error:', err.message);
+    throw err;
+  }
+}
+
 /* -------------------- HEALTH CHECK -------------------- */
 app.get('/health', async (req, res) => {
   try {
@@ -587,12 +665,12 @@ const initDB = async () => {
 };
 
 // Initialize before starting server
-initDB().then(() => {
+ensureDatabase().then(() => {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 }).catch(err => {
-  console.error('Failed to initialize:', err);
+  console.error('Failed to start server:', err);
   process.exit(1);
 });
