@@ -340,9 +340,11 @@ export default function AdminStudentManagement() {
     </div>;
   }
 
-  const pendingApplications = applications.filter(app => !app.is_approved && app.status === 'pending');
-  const approvedApplications = applications.filter(app => app.is_approved);
-  const rejectedApplications = applications.filter(app => app.status === 'rejected');
+  const pendingApplications = applications.filter(app => 
+    (app.status === 'pending' || app.status === 'APPLIED') && !app.is_approved
+  );
+  const approvedApplications = applications.filter(app => app.is_approved || app.status === 'APPROVED');
+  const rejectedApplications = applications.filter(app => app.status === 'rejected' || app.status === 'REJECTED');
 
   return (
     <div style={styles.container}>
