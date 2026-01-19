@@ -66,6 +66,8 @@ async function ensureDatabase() {
           phone VARCHAR(50),
           about_me TEXT,
           resume_path VARCHAR(500),
+          resume_filename VARCHAR(255),
+          resume_data BYTEA,
           status VARCHAR(50) DEFAULT 'pending',
           is_approved BOOLEAN DEFAULT FALSE,
           approved_date TIMESTAMP,
@@ -73,6 +75,24 @@ async function ensureDatabase() {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+    } else {
+      // Add resume_data column if it doesn't exist
+      try {
+        await db.query('ALTER TABLE applications ADD COLUMN resume_data BYTEA');
+        console.log('Added resume_data column');
+      } catch (err) {
+        if (!err.message.includes('already exists')) {
+          console.log('resume_data column already exists or error:', err.message);
+        }
+      }
+      try {
+        await db.query('ALTER TABLE applications ADD COLUMN resume_filename VARCHAR(255)');
+        console.log('Added resume_filename column');
+      } catch (err) {
+        if (!err.message.includes('already exists')) {
+          console.log('resume_filename column already exists');
+        }
+      }
     }
     
     // Check if admin exists
@@ -152,7 +172,17 @@ app.get('/api/applications', getApplications);
 /* -------------------- POST APPLICATION -------------------- */
 const submitApplication = async (req, res) => {
   const { fullName, email, phone, aboutMe, password } = req.body;
-  const resumePath = req.file ? `/uploads/${req.file.filename}` : null;
+  let resumePath = null;
+  let resumeFilename = null;
+  let resumeData = null;
+
+  // Convert resume file to base64 for storage in database
+  if (req.file) {
+    resumeFilename = req.file.originalname;
+    resumeData = req.file.buffer;
+    // Also keep path format for compatibility
+    resumePath = `/api/applications/resume/${email}`;
+  }
 
   /* -------- Input Validation -------- */
   if (!fullName || !email || !phone) {
@@ -180,10 +210,10 @@ const submitApplication = async (req, res) => {
 
     const result = await db.query(
       `INSERT INTO applications
-       (full_name, email, phone, about_me, resume_path)
-       VALUES ($1, $2, $3, $4, $5)
+       (full_name, email, phone, about_me, resume_path, resume_filename, resume_data)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [fullName, email, phone, aboutMe || null, resumePath]
+      [fullName, email, phone, aboutMe || null, resumePath, resumeFilename, resumeData]
     );
 
     res.status(201).json({
@@ -216,6 +246,31 @@ const submitApplication = async (req, res) => {
 
 app.post('/applications', upload.single('resume'), submitApplication);
 app.post('/api/applications', upload.single('resume'), submitApplication);
+
+/* -------------------- GET RESUME -------------------- */
+app.get('/api/applications/resume/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    const result = await db.query(
+      'SELECT resume_data, resume_filename FROM applications WHERE email = $1',
+      [email]
+    );
+
+    if (result.rowCount === 0 || !result.rows[0].resume_data) {
+      return res.status(404).json({ error: 'Resume not found' });
+    }
+
+    const { resume_data, resume_filename } = result.rows[0];
+    
+    res.set('Content-Type', 'application/octet-stream');
+    res.set('Content-Disposition', `attachment; filename="${resume_filename}"`);
+    res.send(resume_data);
+
+  } catch (err) {
+    console.error('GET /resume error:', err);
+    res.status(500).json({ error: 'Failed to retrieve resume' });
+  }
+});
 
 /* -------------------- GET SINGLE APPLICATION BY EMAIL -------------------- */
 app.get('/api/applications/:email', verifyToken, async (req, res) => {
