@@ -325,6 +325,21 @@ export default function AdminStudentManagement() {
     return <div style={styles.container}><div style={styles.noData}>Loading applications...</div></div>;
   }
 
+  if (error) {
+    return <div style={styles.container}>
+      <div style={{maxWidth: '600px', margin: '50px auto'}}>
+        <div style={{background: '#fee2e2', color: '#991b1b', padding: '20px', borderRadius: '8px', marginBottom: '20px'}}>
+          <h3 style={{marginTop: 0}}>❌ Error Loading Applications</h3>
+          <p style={{marginBottom: '10px'}}>{error}</p>
+          <p style={{fontSize: '12px', color: '#7f1d1d'}}>Check the browser console (F12) for more details.</p>
+          <button onClick={() => window.location.reload()} style={{padding: '10px 20px', background: '#991b1b', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}}>
+            🔄 Retry
+          </button>
+        </div>
+      </div>
+    </div>;
+  }
+
   const pendingApplications = applications.filter(app => !app.is_approved && app.status === 'pending');
   const approvedApplications = applications.filter(app => app.is_approved);
   const rejectedApplications = applications.filter(app => app.status === 'rejected');
@@ -332,6 +347,11 @@ export default function AdminStudentManagement() {
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>📊 Student Applications Management</h1>
+
+      {/* Debug Info */}
+      <div style={{background: '#dbeafe', color: '#1e40af', padding: '12px', borderRadius: '6px', marginBottom: '20px', fontSize: '12px'}}>
+        Backend: {window.RUNTIME_CONFIG?.BACKEND_URL || 'Using relative path'} | Applications: {applications.length}
+      </div>
 
       {/* Pending Applications */}
       <div style={{marginBottom: '40px'}}>
