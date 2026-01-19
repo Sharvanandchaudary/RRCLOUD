@@ -6,6 +6,7 @@ import StudentLogin from './StudentLogin';
 import StudentDashboard from './StudentDashboard';
 import AdminStudentManagement from './AdminStudentManagement';
 import AccountSetup from './AccountSetup';
+import StudentAccountCreation from './StudentAccountCreation';
 
 // --- ASSETS ---
 const IMAGES = {
@@ -224,6 +225,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/student-login" element={<StudentLogin />} />
         <Route path="/account-setup" element={<AccountSetup />} />
+        <Route path="/account-creation" element={<StudentAccountCreation />} />
         <Route path="/student-dashboard" element={<StudentDashboard />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/apply" element={<ApplyPage />} />

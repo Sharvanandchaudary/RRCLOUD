@@ -8,6 +8,8 @@ export default function AdminStudentManagement() {
   const [showModal, setShowModal] = useState(false);
   const [tempPassword, setTempPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [setupLink, setSetupLink] = useState('');
+  const [showLinkModal, setShowLinkModal] = useState(false);
 
   useEffect(() => {
     fetchApplications();
@@ -38,6 +40,37 @@ export default function AdminStudentManagement() {
     setTempPassword('');
     setPasswordError('');
     setShowModal(true);
+  };
+
+  const generateSetupLink = async (student) => {
+    try {
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const apiUrl = backendUrl 
+        ? `${backendUrl}/api/applications/${student.id}/generate-setup-link` 
+        : `/api/applications/${student.id}/generate-setup-link`;
+
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const frontendUrl = window.RUNTIME_CONFIG?.FRONTEND_URL || window.location.origin;
+        const fullLink = `${frontendUrl}/account-creation?token=${data.setupToken}`;
+        setSetupLink(fullLink);
+        setSelectedStudent(student);
+        setShowLinkModal(true);
+        setTempPassword('');
+        fetchApplications();
+      } else {
+        const errData = await res.json();
+        alert('Error: ' + (errData.error || 'Failed to generate link'));
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Connection error');
+    }
   };
 
   const validatePassword = (pwd) => {
@@ -314,9 +347,16 @@ export default function AdminStudentManagement() {
                   <td style={styles.td}>
                     <button 
                       style={{...styles.actionBtn, ...styles.approveBtn}}
-                      onClick={() => handleApproveStudent(app)}
+                      onClick={() => generateSetupLink(app)}
                     >
-                      ✅ Approve & Setup
+                      🔗 Send Link
+                    </button>
+                    <button 
+                      style={{...styles.actionBtn, ...styles.approveBtn, background: '#8b5cf6'}}
+                      onClick={() => handleApproveStudent(app)}
+                      title="Set temporary password instead"
+                    >
+                      🔐 Set Password
                     </button>
                     <button 
                       style={{...styles.actionBtn, ...styles.rejectBtn}}
@@ -412,7 +452,7 @@ export default function AdminStudentManagement() {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal for Temporary Password */}
       <div style={styles.modal}>
         <div style={styles.modalContent}>
           <div style={styles.modalTitle}>
@@ -457,6 +497,51 @@ export default function AdminStudentManagement() {
               }}
             >
               Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal for Setup Link */}
+      <div style={{...styles.modal, display: showLinkModal ? 'flex' : 'none'}}>
+        <div style={styles.modalContent}>
+          <div style={styles.modalTitle}>
+            🔗 Account Setup Link Generated
+          </div>
+          <p style={{color: '#475569', marginBottom: '15px', fontSize: '14px'}}>
+            Share this link with {selectedStudent?.full_name}. They can use it to create their own password.
+          </p>
+          
+          <div style={{background: '#f0f9ff', padding: '15px', borderRadius: '6px', marginBottom: '15px', borderLeft: '4px solid #3b82f6'}}>
+            <p style={{fontSize: '12px', color: '#1e40af', margin: '0 0 10px 0', fontWeight: '600'}}>📧 Email to send:</p>
+            <p style={{fontSize: '13px', color: '#1e40af', margin: '0 0 10px 0', wordBreak: 'break-all'}}>{selectedStudent?.email}</p>
+            
+            <p style={{fontSize: '12px', color: '#1e40af', margin: '0 0 10px 0', fontWeight: '600'}}>🔗 Setup Link:</p>
+            <div style={{background: 'white', padding: '10px', borderRadius: '4px', fontSize: '11px', color: '#0f172a', wordBreak: 'break-all', fontFamily: 'monospace', marginBottom: '10px', maxHeight: '80px', overflow: 'auto'}}>
+              {setupLink}
+            </div>
+          </div>
+
+          <button 
+            style={{...styles.saveBtn, background: '#10b981'}}
+            onClick={() => {
+              navigator.clipboard.writeText(setupLink);
+              alert('✅ Link copied to clipboard!');
+            }}
+          >
+            📋 Copy Link to Clipboard
+          </button>
+
+          <div style={styles.modalButtons}>
+            <button 
+              style={styles.cancelBtn}
+              onClick={() => {
+                setShowLinkModal(false);
+                setSelectedStudent(null);
+                setSetupLink('');
+              }}
+            >
+              Close
             </button>
           </div>
         </div>

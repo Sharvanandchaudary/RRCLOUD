@@ -180,6 +180,120 @@ app.put('/api/applications/:id', verifyToken, async (req, res) => {
   }
 });
 
+/* -------------------- GENERATE ACCOUNT SETUP LINK -------------------- */
+app.post('/api/applications/:id/generate-setup-link', async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Fetch application
+    const appResult = await db.query('SELECT * FROM applications WHERE id = $1', [id]);
+    if (appResult.rowCount === 0) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    const application = appResult.rows[0];
+
+    // Mark as approved without creating account yet
+    const updatedApp = await db.query(
+      `UPDATE applications 
+       SET is_approved = TRUE, 
+           approved_date = CURRENT_TIMESTAMP,
+           approved_by = $1,
+           status = 'approved'
+       WHERE id = $2
+       RETURNING *`,
+      ['admin@zgenai.com', id]
+    );
+
+    // Generate JWT token valid for 7 days for account setup
+    const setupToken = jwt.sign(
+      { 
+        email: application.email, 
+        fullName: application.full_name,
+        applicationId: id,
+        purpose: 'account_setup'
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      message: 'Setup link generated',
+      setupToken: setupToken,
+      email: application.email,
+      fullName: application.full_name
+    });
+
+  } catch (err) {
+    console.error('POST /api/applications/:id/generate-setup-link error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/* -------------------- VERIFY SETUP TOKEN -------------------- */
+app.post('/api/auth/verify-setup-token', async (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ error: 'Token is required' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    if (decoded.purpose !== 'account_setup') {
+      return res.status(400).json({ error: 'Invalid token purpose' });
+    }
+
+    res.json({
+      valid: true,
+      email: decoded.email,
+      fullName: decoded.fullName,
+      applicationId: decoded.applicationId
+    });
+
+  } catch (err) {
+    console.error('Token verification error:', err.message);
+    res.status(401).json({ error: 'Invalid or expired token' });
+  }
+});
+
+/* -------------------- CREATE ACCOUNT WITH SETUP TOKEN -------------------- */
+app.post('/api/auth/create-account-from-token', async (req, res) => {
+  const { token, password } = req.body;
+
+  if (!token || !password) {
+    return res.status(400).json({ error: 'Token and password are required' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    if (decoded.purpose !== 'account_setup') {
+      return res.status(400).json({ error: 'Invalid token purpose' });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+
+    // Create user account
+    await db.query(
+      `INSERT INTO users (email, password_hash, full_name, role)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (email) DO UPDATE SET password_hash = $2`,
+      [decoded.email, hashed, decoded.fullName, 'student']
+    );
+
+    res.json({
+      message: 'Account created successfully',
+      email: decoded.email
+    });
+
+  } catch (err) {
+    console.error('POST /api/auth/create-account-from-token error:', err);
+    res.status(500).json({ error: 'Failed to create account' });
+  }
+});
+
 /* -------------------- APPROVE APPLICATION & CREATE STUDENT ACCOUNT -------------------- */
 app.post('/api/applications/:id/approve', async (req, res) => {
   const { id } = req.params;
