@@ -41,6 +41,24 @@ export default function AdminStudentManagement() {
     }
   };
 
+  const getResumeUrl = (resumePath) => {
+    if (!resumePath) return null;
+    const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+    
+    // If it already has a full URL, use it
+    if (resumePath.startsWith('http://') || resumePath.startsWith('https://')) {
+      return resumePath;
+    }
+    
+    // If it's a relative path, prepend backend URL
+    if (backendUrl) {
+      return `${backendUrl}${resumePath}`;
+    }
+    
+    // Otherwise return as-is (will use relative path)
+    return resumePath;
+  };
+
   const handleApproveStudent = (student) => {
     setSelectedStudent(student);
     setTempPassword('');
@@ -342,7 +360,7 @@ export default function AdminStudentManagement() {
                   <td style={styles.td}>{app.phone || '-'}</td>
                   <td style={styles.td}>
                     {app.resume_path ? (
-                      <a href={app.resume_path} target="_blank" rel="noopener noreferrer" style={{color: '#3b82f6', textDecoration: 'none', fontWeight: '600'}}>
+                      <a href={getResumeUrl(app.resume_path)} target="_blank" rel="noopener noreferrer" style={{color: '#3b82f6', textDecoration: 'none', fontWeight: '600'}}>
                         📄 Download
                       </a>
                     ) : (
@@ -403,7 +421,7 @@ export default function AdminStudentManagement() {
                   <td style={styles.td}>{app.email}</td>
                   <td style={styles.td}>
                     {app.resume_path ? (
-                      <a href={app.resume_path} target="_blank" rel="noopener noreferrer" style={{color: '#3b82f6', textDecoration: 'none', fontWeight: '600'}}>
+                      <a href={getResumeUrl(app.resume_path)} target="_blank" rel="noopener noreferrer" style={{color: '#3b82f6', textDecoration: 'none', fontWeight: '600'}}>
                         📄 Download
                       </a>
                     ) : (
@@ -442,7 +460,7 @@ export default function AdminStudentManagement() {
                   <td style={styles.td}>{app.email}</td>
                   <td style={styles.td}>
                     {app.resume_path ? (
-                      <a href={app.resume_path} target="_blank" rel="noopener noreferrer" style={{color: '#3b82f6', textDecoration: 'none', fontWeight: '600'}}>
+                      <a href={getResumeUrl(app.resume_path)} target="_blank" rel="noopener noreferrer" style={{color: '#3b82f6', textDecoration: 'none', fontWeight: '600'}}>
                         📄 Download
                       </a>
                     ) : (
