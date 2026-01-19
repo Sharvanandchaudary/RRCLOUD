@@ -48,14 +48,17 @@ const upload = multer({ storage });
 /* -------------------- GET APPLICATIONS -------------------- */
 const getApplications = async (req, res) => {
   try {
+    console.log('GET /applications called');
     const result = await db.query(
       'SELECT * FROM applications ORDER BY created_at DESC'
     );
+    console.log('Applications found:', result.rowCount);
     res.status(200).json(result.rows);
   } catch (err) {
     console.error('GET /applications DB ERROR:', err);
     res.status(500).json({
-      error: 'Failed to fetch applications'
+      error: 'Failed to fetch applications',
+      details: err.message
     });
   }
 };

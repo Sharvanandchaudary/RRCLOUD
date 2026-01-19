@@ -20,16 +20,22 @@ export default function AdminStudentManagement() {
       const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
       const apiUrl = backendUrl ? `${backendUrl}/applications` : '/applications';
 
+      console.log('Fetching from:', apiUrl);
       const res = await fetch(apiUrl);
+      console.log('Response status:', res.status);
+      
       if (res.ok) {
         const data = await res.json();
+        console.log('Applications fetched:', data);
         setApplications(data);
       } else {
-        setError('Failed to fetch applications');
+        const errText = await res.text();
+        console.error('API error:', errText);
+        setError('Failed to fetch applications: ' + res.status);
       }
     } catch (err) {
-      console.error(err);
-      setError('Connection error');
+      console.error('Fetch error:', err);
+      setError('Connection error: ' + err.message);
     } finally {
       setLoading(false);
     }
