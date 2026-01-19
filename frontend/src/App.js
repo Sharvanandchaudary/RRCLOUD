@@ -6,7 +6,6 @@ import StudentLogin from './StudentLogin';
 import StudentDashboard from './StudentDashboard';
 import AdminStudentManagement from './AdminStudentManagement';
 import AccountSetup from './AccountSetup';
-import React from 'react';
 
 // --- ASSETS ---
 const IMAGES = {
