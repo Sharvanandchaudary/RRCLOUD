@@ -290,6 +290,7 @@ export default function AdminStudentManagement() {
                 <th style={styles.th}>Name</th>
                 <th style={styles.th}>Email</th>
                 <th style={styles.th}>Phone</th>
+                <th style={styles.th}>Resume</th>
                 <th style={styles.th}>Applied</th>
                 <th style={styles.th}>Actions</th>
               </tr>
@@ -300,6 +301,15 @@ export default function AdminStudentManagement() {
                   <td style={styles.td}><strong>{app.full_name}</strong></td>
                   <td style={styles.td}>{app.email}</td>
                   <td style={styles.td}>{app.phone || '-'}</td>
+                  <td style={styles.td}>
+                    {app.resume_path ? (
+                      <a href={app.resume_path} target="_blank" rel="noopener noreferrer" style={{color: '#3b82f6', textDecoration: 'none', fontWeight: '600'}}>
+                        📄 Download
+                      </a>
+                    ) : (
+                      <span style={{color: '#999'}}>No File</span>
+                    )}
+                  </td>
                   <td style={styles.td}>{new Date(app.created_at).toLocaleDateString()}</td>
                   <td style={styles.td}>
                     <button 
@@ -335,6 +345,7 @@ export default function AdminStudentManagement() {
               <tr>
                 <th style={styles.th}>Name</th>
                 <th style={styles.th}>Email</th>
+                <th style={styles.th}>Resume</th>
                 <th style={styles.th}>Approved Date</th>
                 <th style={styles.th}>Status</th>
               </tr>
@@ -344,6 +355,15 @@ export default function AdminStudentManagement() {
                 <tr key={app.id}>
                   <td style={styles.td}><strong>{app.full_name}</strong></td>
                   <td style={styles.td}>{app.email}</td>
+                  <td style={styles.td}>
+                    {app.resume_path ? (
+                      <a href={app.resume_path} target="_blank" rel="noopener noreferrer" style={{color: '#3b82f6', textDecoration: 'none', fontWeight: '600'}}>
+                        📄 Download
+                      </a>
+                    ) : (
+                      <span style={{color: '#999'}}>No File</span>
+                    )}
+                  </td>
                   <td style={styles.td}>{app.approved_date ? new Date(app.approved_date).toLocaleDateString() : '-'}</td>
                   <td style={styles.td}><span style={styles.statusApproved}>APPROVED</span></td>
                 </tr>
@@ -364,7 +384,8 @@ export default function AdminStudentManagement() {
               <tr>
                 <th style={styles.th}>Name</th>
                 <th style={styles.th}>Email</th>
-                <th style={styles.th}>Applied</th>
+                <th style={styles.th}>Resume</th>
+                <th style={styles.th}>Rejection Date</th>
                 <th style={styles.th}>Status</th>
               </tr>
             </thead>
@@ -373,6 +394,15 @@ export default function AdminStudentManagement() {
                 <tr key={app.id}>
                   <td style={styles.td}><strong>{app.full_name}</strong></td>
                   <td style={styles.td}>{app.email}</td>
+                  <td style={styles.td}>
+                    {app.resume_path ? (
+                      <a href={app.resume_path} target="_blank" rel="noopener noreferrer" style={{color: '#3b82f6', textDecoration: 'none', fontWeight: '600'}}>
+                        📄 Download
+                      </a>
+                    ) : (
+                      <span style={{color: '#999'}}>No File</span>
+                    )}
+                  </td>
                   <td style={styles.td}>{new Date(app.created_at).toLocaleDateString()}</td>
                   <td style={styles.td}><span style={styles.statusRejected}>REJECTED</span></td>
                 </tr>
