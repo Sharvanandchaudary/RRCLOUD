@@ -19,17 +19,22 @@ app.use(cors({
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
-/* -------------------- ROOT (optional but useful) -------------------- */
-app.get('/', (req, res) => {
-  res.json({
-    service: 'ZgenAi Backend',
-    status: 'running',
-    endpoints: {
-      health: '/health',
-      listApplications: 'GET /applications',
-      submitApplication: 'POST /applications'
-    }
-  });
+/* -------------------- HEALTH CHECK -------------------- */
+app.get('/health', async (req, res) => {
+  try {
+    const result = await db.query('SELECT NOW()');
+    res.json({
+      status: 'ok',
+      database: 'connected',
+      timestamp: result.rows[0].now
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: 'error',
+      database: 'disconnected',
+      error: err.message
+    });
+  }
 });
 
 /* -------------------- FILE UPLOAD SETUP -------------------- */
@@ -498,27 +503,36 @@ app.post('/api/admin/reset-credentials', async (req, res) => {
   // This endpoint should be removed in production
   // It's only for emergency credential reset
   try {
+    console.log('Reset admin credentials called');
     const email = 'admin@zgenai.com';
     const password = 'admin123'; // Plaintext for legacy fallback
     
     // Delete existing admin
+    console.log('Deleting existing admin...');
     await db.query('DELETE FROM users WHERE email = $1', [email]);
     
     // Insert new admin
-    await db.query(
-      'INSERT INTO users (email, password_hash, full_name, role) VALUES ($1, $2, $3, $4)',
+    console.log('Inserting new admin...');
+    const result = await db.query(
+      'INSERT INTO users (email, password_hash, full_name, role) VALUES ($1, $2, $3, $4) RETURNING *',
       [email, password, 'System Admin', 'admin']
     );
 
+    console.log('Admin reset successful:', result.rows[0]);
+
     res.json({ 
-      message: 'Admin credentials reset',
+      message: 'Admin credentials reset successfully',
       email: email,
-      password: password 
+      password: password,
+      user: result.rows[0]
     });
 
   } catch (err) {
-    console.error('Admin reset error:', err);
-    res.status(500).json({ error: 'Failed to reset admin credentials' });
+    console.error('Admin reset error:', err.message);
+    res.status(500).json({ 
+      error: 'Failed to reset admin credentials',
+      details: err.message
+    });
   }
 });
 
