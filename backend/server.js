@@ -188,9 +188,10 @@ const getApplications = async (req, res) => {
     console.log('GET /applications called');
     const result = await db.query(`
       SELECT 
-        id, full_name, email, phone, about_me, resume_path, resume_filename, resume_data,
+        id, full_name, email, phone, about_me, resume_path, 
+        resume_filename, resume_data,
         status, 
-        COALESCE(is_approved, FALSE) as is_approved,
+        FALSE as is_approved,
         approved_date,
         approved_by,
         admin_notes,
@@ -199,6 +200,7 @@ const getApplications = async (req, res) => {
       ORDER BY created_at DESC
     `);
     console.log('Applications found:', result.rowCount);
+    console.log('First row:', result.rows[0]);
     res.status(200).json(result.rows);
   } catch (err) {
     console.error('GET /applications DB ERROR:', err);
