@@ -145,19 +145,55 @@ const Home = () => (
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPass] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
     const navigate = useNavigate();
+    
     const handleLogin = async () => {
-        if(email === 'admin@zgenai.com' && password === 'admin123') navigate('/admin');
-        else alert('Invalid Credentials for Demo');
+        if (!email || !password) {
+            setError('Email and password required');
+            return;
+        }
+        
+        setLoading(true);
+        setError('');
+        
+        try {
+            const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+            const apiUrl = backendUrl ? `${backendUrl}/auth/login` : '/auth/login';
+            
+            const res = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                if (data.token) localStorage.setItem('auth_token', data.token);
+                if (data.user) localStorage.setItem('auth_user', JSON.stringify(data.user));
+                navigate('/admin');
+            } else {
+                const errData = await res.json();
+                setError(errData.error || 'Invalid credentials');
+            }
+        } catch (err) {
+            console.error('Login error:', err);
+            setError('Connection error: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
     };
+    
     return (
         <div style={{minHeight:'100vh', background:'#f1f5f9', display:'flex', flexDirection:'column'}}>
             <FontLoader /><Navbar />
             <div style={styles.authBox}>
                 <h2 style={{fontSize:'28px', fontWeight:'800', color:'#0f172a', margin:0, marginBottom:'20px'}}>Portal Access</h2>
-                <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} style={styles.input} />
-                <input type="password" placeholder="Password" value={password} onChange={e=>setPass(e.target.value)} style={styles.input} />
-                <button onClick={handleLogin} style={{width:'100%', padding:'18px', background:'#0f172a', color:'white', border:'none', marginTop:'30px', fontWeight:'700', cursor:'pointer'}}>AUTHENTICATE →</button>
+                {error && <div style={{background:'#fee2e2', color:'#991b1b', padding:'12px', borderRadius:'4px', marginBottom:'15px', fontSize:'14px'}}>{error}</div>}
+                <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} style={styles.input} disabled={loading} />
+                <input type="password" placeholder="Password" value={password} onChange={e=>setPass(e.target.value)} style={styles.input} disabled={loading} />
+                <button onClick={handleLogin} style={{width:'100%', padding:'18px', background:'#0f172a', color:'white', border:'none', marginTop:'30px', fontWeight:'700', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1}} disabled={loading}>{loading ? 'LOGGING IN...' : 'AUTHENTICATE →'}</button>
             </div>
         </div>
     );
