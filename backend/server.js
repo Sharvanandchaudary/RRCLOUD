@@ -521,9 +521,35 @@ app.post('/api/applications/:id/approve', async (req, res) => {
       [approvedBy || 'admin@rrcloud.com', id]
     );
 
+    // Prepare email message (will be used by admin to manually send)
+    const emailContent = {
+      to: application.email,
+      subject: '🎉 Congratulations! Your Application Has Been Approved',
+      html: `
+        <h2>Welcome to RRCloud, ${application.full_name}!</h2>
+        <p>We're excited to inform you that your application has been approved!</p>
+        <p><strong>Your login credentials:</strong></p>
+        <ul>
+          <li><strong>Email:</strong> ${application.email}</li>
+          <li><strong>Password:</strong> ${password}</li>
+          <li><strong>Login URL:</strong> https://rrcloud-frontend-nsmgws4u4a-uc.a.run.app/student-login</li>
+        </ul>
+        <p><strong>Important:</strong> Please keep these credentials safe and change your password after first login.</p>
+        <p>You are now enrolled in our program. Log in to view your dashboard and details.</p>
+        <br>
+        <p>Best regards,<br>RRCloud Team</p>
+      `
+    };
+
+    console.log(`📧 [EMAIL SHOULD BE SENT] To: ${application.email}`);
+    console.log(`   Subject: ${emailContent.subject}`);
+    console.log(`   Credentials: ${application.email} / ${password}`);
+
     res.json({
       message: 'Student approved and account created',
-      application: updatedApp.rows[0]
+      application: updatedApp.rows[0],
+      emailContent: emailContent,
+      note: 'Email content generated. In production, this would be sent via email service.'
     });
 
   } catch (err) {

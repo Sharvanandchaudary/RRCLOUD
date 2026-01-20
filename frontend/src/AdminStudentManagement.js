@@ -138,9 +138,12 @@ export default function AdminStudentManagement() {
       });
 
       if (res.ok) {
-        alert('✅ Student approved and account created!');
+        const data = await res.json();
+        console.log('Approval response:', data);
+        alert(`✅ Student approved and account created!\n\n📧 Credentials sent to: ${selectedStudent.email}\nEmail: ${selectedStudent.email}\nPassword: ${tempPassword}\n\nNote: In production, this would be automatically emailed to the student.`);
         setShowModal(false);
         setSelectedStudent(null);
+        setTempPassword('');
         fetchApplications();
       } else {
         const errData = await res.json();

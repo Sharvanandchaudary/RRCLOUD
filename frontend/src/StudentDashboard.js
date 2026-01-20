@@ -340,15 +340,26 @@ export default function StudentDashboard() {
                 <span style={styles.value}>{application.phone || 'Not provided'}</span>
               </div>
               <div style={styles.infoRow}>
-                <span style={styles.label}>Status:</span>
-                <span style={styles.status}>
-                  {application.is_approved ? '✅ Approved' : '⏳ Pending Review'}
+                <span style={styles.label}>Enrollment Status:</span>
+                <span style={{
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  background: application.is_approved ? '#dcfce7' : '#fef3c7',
+                  color: application.is_approved ? '#166534' : '#92400e'
+                }}>
+                  {application.is_approved ? '✅ ENROLLED' : '⏳ PENDING REVIEW'}
                 </span>
               </div>
-              {application.approved_date && (
-                <div style={styles.infoRow}>
-                  <span style={styles.label}>Approved Date:</span>
-                  <span style={styles.value}>{new Date(application.approved_date).toLocaleDateString()}</span>
+              {application.is_approved && (
+                <div style={{...styles.infoRow, marginTop: '20px', padding: '15px', background: '#f0f9ff', borderRadius: '8px', border: '2px solid #0284c7'}}>
+                  <div style={{fontSize: '16px', fontWeight: 'bold', color: '#0c4a6e', marginBottom: '10px'}}>🎉 Congratulations!</div>
+                  <div style={{color: '#0c4a6e', fontSize: '14px', lineHeight: '1.6'}}>
+                    You have been selected for enrollment. Your account is now active. 
+                    You can access all program resources and materials through this dashboard.
+                    {application.approved_date && ` Enrollment approved on ${new Date(application.approved_date).toLocaleDateString()}`}
+                  </div>
                 </div>
               )}
               <div style={styles.infoRow}>
