@@ -271,7 +271,7 @@ export default function StudentDashboard() {
         </div>
         <div style={styles.infoRow}>
           <span style={styles.label}>Role:</span>
-          <span style={styles.value} style={{textTransform: 'capitalize'}}>{user?.role}</span>
+          <span style={{...styles.value, textTransform: 'capitalize'}}>{user?.role}</span>
         </div>
       </div>
 
