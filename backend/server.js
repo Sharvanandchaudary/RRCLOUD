@@ -738,8 +738,7 @@ app.post('/api/admin/reset-credentials', async (req, res) => {
 });
 
 /* -------------------- START SERVER -------------------- */
-const PORT = process.env.PORT || 5001;
-
+const PORT = process.env.PORT || 5001;// Backend v2.3 - Fixed deployment
 // Initialize database tables on startup
 const initDB = async () => {
   try {
