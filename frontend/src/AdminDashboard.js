@@ -203,7 +203,7 @@ export default function AdminDashboard() {
 
   return (
     <div style={styles.container}>
-      <div style={styles.header}>👔 Hiring Dashboard</div>
+      <div style={styles.header}>👔 Hiring Dashboard - Candidate Management</div>
 
       {error && (
         <div style={{
