@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-do
 import StudentSignup from './StudentSignup';
 import StudentLogin from './StudentLogin';
 import StudentDashboard from './StudentDashboard';
-import AdminStudentManagement from './AdminStudentManagement';
+import AdminDashboard from './AdminDashboard';
 import AccountSetup from './AccountSetup';
 import StudentAccountCreation from './StudentAccountCreation';
 
@@ -194,53 +194,6 @@ const Login = () => {
                 <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} style={styles.input} disabled={loading} />
                 <input type="password" placeholder="Password" value={password} onChange={e=>setPass(e.target.value)} style={styles.input} disabled={loading} />
                 <button onClick={handleLogin} style={{width:'100%', padding:'18px', background:'#0f172a', color:'white', border:'none', marginTop:'30px', fontWeight:'700', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1}} disabled={loading}>{loading ? 'LOGGING IN...' : 'AUTHENTICATE →'}</button>
-            </div>
-        </div>
-    );
-};
-
-// --- ADMIN DASHBOARD (Corrected Relative Path) ---
-const AdminDashboard = () => {
-    const [activeTab, setActiveTab] = useState('students');
-
-    const dashboardStyle = { padding: '0', fontFamily: "'Outfit', sans-serif", backgroundColor: '#f4f6f8', minHeight: '100vh' };
-    const tabsStyle = { 
-        display: 'flex', 
-        gap: '0', 
-        background: 'white', 
-        borderBottom: '2px solid #e2e8f0',
-        padding: '0 40px',
-        maxWidth: '1200px',
-        margin: '0 auto'
-    };
-    const tabStyle = {
-        padding: '15px 20px',
-        cursor: 'pointer',
-        fontWeight: '600',
-        fontSize: '15px',
-        color: '#64748b',
-        borderBottom: activeTab === 'students' ? '3px solid #3b82f6' : 'none',
-        transition: '0.3s'
-    };
-
-    return (
-        <div style={dashboardStyle}>
-            <FontLoader /><Navbar />
-            <div style={{maxWidth:'1200px', margin:'auto', padding:'0 40px'}}>
-                <div style={{display:'flex', alignItems:'center', gap:'20px', margin:'20px 0'}}>
-                    <h1 style={{margin:0}}>👨‍💼 Admin Control Panel</h1>
-                </div>
-
-                <div style={tabsStyle}>
-                    <div 
-                        style={{...tabStyle, color: activeTab === 'students' ? '#3b82f6' : '#64748b'}}
-                        onClick={() => setActiveTab('students')}
-                    >
-                        📚 Student Management
-                    </div>
-                </div>
-
-                {activeTab === 'students' && <AdminStudentManagement />}
             </div>
         </div>
     );
