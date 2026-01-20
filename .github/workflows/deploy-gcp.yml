@@ -49,7 +49,7 @@ jobs:
             --region ${{ env.GCP_REGION }} \
             --allow-unauthenticated \
             --add-cloudsql-instances rrcloud-platform:us-central1:rrcloud-db \
-            --set-env-vars DB_HOST=${{ secrets.DB_HOST }},DB_PORT=${{ secrets.DB_PORT }},DB_NAME=${{ secrets.DB_NAME }},DB_USER=${{ secrets.DB_USER }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},NODE_ENV=production,FRONTEND_URL=${{ secrets.FRONTEND_URL }} \
+            --set-env-vars DB_HOST=${{ secrets.DB_HOST }},DB_PORT=${{ secrets.DB_PORT }},DB_NAME=${{ secrets.DB_NAME }},DB_USER=${{ secrets.DB_USER }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},NODE_ENV=production,FRONTEND_URL=${{ secrets.FRONTEND_URL }},SMTP_HOST=smtp.gmail.com,SMTP_PORT=587,SMTP_SECURE=false,SMTP_USER=admin@zgenai.org,SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }},JWT_SECRET=${{ secrets.JWT_SECRET }} \
             --memory 512Mi \
             --cpu 1 \
             --max-instances 10

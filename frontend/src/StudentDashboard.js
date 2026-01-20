@@ -131,127 +131,184 @@ export default function StudentDashboard() {
     container: {
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-      padding: '20px'
+      padding: '20px',
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif"
+    },
+    wrapper: {
+      maxWidth: '1200px',
+      margin: '0 auto'
     },
     header: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      padding: '20px',
+      padding: '24px 32px',
       background: 'white',
-      borderRadius: '8px',
+      borderRadius: '12px',
       marginBottom: '30px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      maxWidth: '1000px',
-      margin: '0 auto 30px'
+      boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
     },
     title: {
       fontSize: '28px',
-      fontWeight: '800',
-      color: '#0f172a',
+      fontWeight: '700',
+      color: '#1a202c',
       margin: 0
     },
     logoutBtn: {
       padding: '10px 20px',
-      background: '#dc2626',
+      background: '#ef4444',
       color: 'white',
       border: 'none',
-      borderRadius: '4px',
+      borderRadius: '6px',
       cursor: 'pointer',
-      fontWeight: '600'
+      fontWeight: '600',
+      fontSize: '14px',
+      transition: 'background 0.2s ease'
     },
     card: {
       background: 'white',
-      padding: '40px',
-      borderRadius: '8px',
-      boxShadow: '0 2px 12px rgba(0,0,0,0.1)',
-      maxWidth: '1000px',
-      margin: '0 auto 30px'
+      padding: '32px',
+      borderRadius: '12px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+      marginBottom: '24px'
     },
-    sectionTitle: {
+    cardTitle: {
       fontSize: '20px',
       fontWeight: '700',
-      color: '#0f172a',
-      marginBottom: '20px',
-      borderBottom: '2px solid #3b82f6',
-      paddingBottom: '10px'
+      color: '#1a202c',
+      marginBottom: '24px',
+      paddingBottom: '16px',
+      borderBottom: '2px solid #e2e8f0'
     },
     infoRow: {
       display: 'grid',
-      gridTemplateColumns: '150px 1fr',
-      gap: '20px',
-      marginBottom: '15px',
+      gridTemplateColumns: '160px 1fr',
+      gap: '24px',
+      marginBottom: '20px',
       alignItems: 'start'
     },
     label: {
       fontWeight: '600',
       color: '#475569',
-      fontSize: '14px'
+      fontSize: '13px',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px'
     },
     value: {
       color: '#1a202c',
-      fontSize: '15px'
+      fontSize: '15px',
+      lineHeight: '1.6'
     },
     input: {
       width: '100%',
-      padding: '12px',
-      border: '1px solid #cbd5e1',
-      borderRadius: '4px',
-      fontSize: '15px',
+      padding: '12px 14px',
+      border: '1px solid #cbd5e0',
+      borderRadius: '6px',
+      fontSize: '14px',
       boxSizing: 'border-box',
-      marginBottom: '10px'
+      marginBottom: '12px',
+      fontFamily: 'inherit',
+      transition: 'border-color 0.2s ease'
     },
     textarea: {
       width: '100%',
-      padding: '12px',
-      border: '1px solid #cbd5e1',
-      borderRadius: '4px',
-      fontSize: '15px',
+      padding: '12px 14px',
+      border: '1px solid #cbd5e0',
+      borderRadius: '6px',
+      fontSize: '14px',
       fontFamily: 'inherit',
       boxSizing: 'border-box',
-      minHeight: '100px',
-      marginBottom: '10px'
+      minHeight: '120px',
+      marginBottom: '12px',
+      transition: 'border-color 0.2s ease'
     },
     buttonGroup: {
       display: 'flex',
-      gap: '10px',
-      marginTop: '20px'
+      gap: '12px',
+      marginTop: '24px'
     },
-    saveBtn: {
-      padding: '12px 30px',
-      background: '#3b82f6',
+    btnPrimary: {
+      padding: '12px 24px',
+      background: '#667eea',
       color: 'white',
       border: 'none',
-      borderRadius: '4px',
+      borderRadius: '6px',
       cursor: 'pointer',
-      fontWeight: '600'
+      fontWeight: '600',
+      fontSize: '14px',
+      transition: 'background 0.2s ease'
     },
-    cancelBtn: {
-      padding: '12px 30px',
-      background: '#cbd5e1',
+    btnSecondary: {
+      padding: '12px 24px',
+      background: '#e2e8f0',
       color: '#1a202c',
       border: 'none',
-      borderRadius: '4px',
+      borderRadius: '6px',
       cursor: 'pointer',
-      fontWeight: '600'
-    },
-    editBtn: {
-      padding: '10px 20px',
-      background: '#3b82f6',
-      color: 'white',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      fontWeight: '600'
-    },
-    status: {
-      display: 'inline-block',
-      padding: '6px 12px',
-      borderRadius: '20px',
-      fontSize: '13px',
       fontWeight: '600',
+      fontSize: '14px',
+      transition: 'background 0.2s ease'
+    },
+    statusBadge: {
+      display: 'inline-block',
+      padding: '8px 16px',
+      borderRadius: '20px',
+      fontWeight: '600',
+      fontSize: '13px',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
       background: application?.is_approved ? '#dcfce7' : '#fef3c7',
       color: application?.is_approved ? '#166534' : '#92400e'
+    },
+    congratulationsBox: {
+      padding: '24px',
+      background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+      borderRadius: '8px',
+      border: '2px solid #0284c7',
+      marginTop: '20px',
+      marginBottom: '20px'
+    },
+    congratulationsTitle: {
+      fontSize: '16px',
+      fontWeight: '700',
+      color: '#0c4a6e',
+      marginBottom: '12px'
+    },
+    congratulationsText: {
+      color: '#0c4a6e',
+      fontSize: '14px',
+      lineHeight: '1.6'
+    },
+    statsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: '20px',
+      marginTop: '30px'
+    },
+    statCard: {
+      background: 'white',
+      padding: '24px',
+      borderRadius: '12px',
+      textAlign: 'center',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+      border: '2px solid #f0f4f8'
+    },
+    statNumber: {
+      fontSize: '32px',
+      fontWeight: '700',
+      color: '#667eea',
+      margin: '0 0 12px 0'
+    },
+    statLabel: {
+      fontSize: '13px',
+      color: '#475569',
+      fontWeight: '600',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px'
+    },
+    headerActions: {
+      display: 'flex',
+      gap: '12px'
     }
   };
 

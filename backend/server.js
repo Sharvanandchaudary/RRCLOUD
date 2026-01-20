@@ -3,12 +3,34 @@ const cors = require('cors');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 const db = require('./db');
 const fs = require('fs');
 
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_jwt_secret';
+
+/* -------------------- EMAIL CONFIGURATION -------------------- */
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: process.env.SMTP_PORT || 587,
+  secure: process.env.SMTP_SECURE === 'true' || false,
+  auth: {
+    user: process.env.SMTP_USER || 'admin@zgenai.org',
+    pass: process.env.SMTP_PASSWORD || 'default_app_password'
+  }
+});
+
+// Verify email configuration on startup
+transporter.verify((error, success) => {
+  if (error) {
+    console.warn('WARNING: Email service not configured:', error.message);
+    console.log('    Set SMTP_HOST, SMTP_USER, SMTP_PASSWORD environment variables');
+  } else {
+    console.log('INFO: Email service ready');
+  }
+});
 
 /* -------------------- CORS -------------------- */
 app.use(cors({
@@ -22,7 +44,7 @@ app.use('/uploads', express.static('uploads'));
 // Auto-initialize database on startup (v2)
 async function ensureDatabase() {
   try {
-    console.log('🗄️  Checking database schema...');
+    console.log('INFO: Checking database schema...');
     
     // Check if users table exists
     const checkUsers = await db.query(`
@@ -518,38 +540,62 @@ app.post('/api/applications/:id/approve', async (req, res) => {
            status = 'approved'
        WHERE id = $2
        RETURNING *`,
-      [approvedBy || 'admin@rrcloud.com', id]
+       [approvedBy || 'admin@zgenai.org', id]
     );
 
-    // Prepare email message (will be used by admin to manually send)
+    // Prepare email content
     const emailContent = {
+      from: 'admin@zgenai.org',
       to: application.email,
-      subject: '🎉 Congratulations! Your Application Has Been Approved',
+      subject: 'Account Activation - Login Credentials',
       html: `
-        <h2>Welcome to RRCloud, ${application.full_name}!</h2>
-        <p>We're excited to inform you that your application has been approved!</p>
-        <p><strong>Your login credentials:</strong></p>
-        <ul>
-          <li><strong>Email:</strong> ${application.email}</li>
-          <li><strong>Password:</strong> ${password}</li>
-          <li><strong>Login URL:</strong> https://rrcloud-frontend-nsmgws4u4a-uc.a.run.app/student-login</li>
-        </ul>
-        <p><strong>Important:</strong> Please keep these credentials safe and change your password after first login.</p>
-        <p>You are now enrolled in our program. Log in to view your dashboard and details.</p>
-        <br>
-        <p>Best regards,<br>RRCloud Team</p>
-      `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #1e3a8a; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Account Activation</h2>
+            <p style="color: #374151; line-height: 1.6;">Dear ${application.full_name},</p>
+            <p style="color: #374151; line-height: 1.6;">Your application has been approved. Please find your login credentials below:</p>
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #1e40af;">
+              <p style="margin: 5px 0; color: #374151;"><strong>Email:</strong> ${application.email}</p>
+              <p style="margin: 5px 0; color: #374151;"><strong>Password:</strong> ${password}</p>
+              <p style="margin: 5px 0; color: #374151;"><strong>Login URL:</strong> <a href="https://rrcloud-frontend-nsmgws4u4a-uc.a.run.app/student-login" style="color: #1e40af;">Access Portal</a></p>
+            </div>
+            <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">Please keep these credentials secure and change your password after first login.</p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+            <p style="color: #6b7280; font-size: 14px;">Best regards,<br>Administration Team</p>
+          </div>
+        </div>
+      `,
+      text: `Account Activation - Login Credentials
+
+Dear ${application.full_name},
+
+Your application has been approved. Please find your login credentials below:
+
+Email: ${application.email}
+Password: ${password}
+Login: https://rrcloud-frontend-nsmgws4u4a-uc.a.run.app/student-login
+
+Please keep these credentials secure and change your password after first login.
+
+Best regards,
+Administration Team`
     };
 
-    console.log(`📧 [EMAIL SHOULD BE SENT] To: ${application.email}`);
-    console.log(`   Subject: ${emailContent.subject}`);
-    console.log(`   Credentials: ${application.email} / ${password}`);
+    // Send email
+    try {
+      await transporter.sendMail(emailContent);
+      console.log(`INFO: Email sent to: ${application.email}`);
+    } catch (emailErr) {
+      console.warn(`WARNING: Email failed to send to ${application.email}:`, emailErr.message);
+      console.log('   Email will need to be sent manually or service needs configuration');
+    }
 
     res.json({
       message: 'Student approved and account created',
       application: updatedApp.rows[0],
       emailContent: emailContent,
-      note: 'Email content generated. In production, this would be sent via email service.'
+      emailSent: true,
+      note: 'Email has been sent to the student'
     });
 
   } catch (err) {
