@@ -186,9 +186,18 @@ const upload = multer({ storage });
 const getApplications = async (req, res) => {
   try {
     console.log('GET /applications called');
-    const result = await db.query(
-      'SELECT * FROM applications ORDER BY created_at DESC'
-    );
+    const result = await db.query(`
+      SELECT 
+        id, full_name, email, phone, about_me, resume_path, resume_filename, resume_data,
+        status, 
+        COALESCE(is_approved, FALSE) as is_approved,
+        approved_date,
+        approved_by,
+        admin_notes,
+        created_at, updated_at
+      FROM applications 
+      ORDER BY created_at DESC
+    `);
     console.log('Applications found:', result.rowCount);
     res.status(200).json(result.rows);
   } catch (err) {
