@@ -25,7 +25,12 @@ export default function AdminStudentManagement() {
       console.log('Response status:', res.status);
       
       if (res.ok) {
-        const data = await res.json();
+        let data = await res.json();
+        // Ensure is_approved field exists on all applications
+        data = data.map(app => ({
+          ...app,
+          is_approved: app.is_approved || false
+        }));
         console.log('Applications fetched:', data);
         setApplications(data);
       } else {
