@@ -76,45 +76,55 @@ async function ensureDatabase() {
         )
       `);
     } else {
-      // Add resume_data column if it doesn't exist
+      // Add missing columns
       try {
         await db.query('ALTER TABLE applications ADD COLUMN resume_data BYTEA');
-        console.log('Added resume_data column');
+        console.log('✅ Added resume_data column');
       } catch (err) {
-        if (!err.message.includes('already exists')) {
-          console.log('resume_data column already exists or error:', err.message);
+        if (err.code === '42701' || err.message.includes('already exists')) {
+          console.log('✅ resume_data column already exists');
+        } else {
+          console.log('⚠️ Error adding resume_data:', err.message);
         }
       }
       try {
         await db.query('ALTER TABLE applications ADD COLUMN resume_filename VARCHAR(255)');
-        console.log('Added resume_filename column');
+        console.log('✅ Added resume_filename column');
       } catch (err) {
-        if (!err.message.includes('already exists')) {
-          console.log('resume_filename column already exists');
+        if (err.code === '42701' || err.message.includes('already exists')) {
+          console.log('✅ resume_filename column already exists');
+        } else {
+          console.log('⚠️ Error adding resume_filename:', err.message);
         }
       }
       try {
         await db.query('ALTER TABLE applications ADD COLUMN is_approved BOOLEAN DEFAULT FALSE');
-        console.log('Added is_approved column');
+        console.log('✅ Added is_approved column');
       } catch (err) {
-        if (!err.message.includes('already exists')) {
-          console.log('is_approved column already exists');
+        if (err.code === '42701' || err.message.includes('already exists')) {
+          console.log('✅ is_approved column already exists');
+        } else {
+          console.log('⚠️ Error adding is_approved:', err.message);
         }
       }
       try {
         await db.query('ALTER TABLE applications ADD COLUMN approved_date TIMESTAMP');
-        console.log('Added approved_date column');
+        console.log('✅ Added approved_date column');
       } catch (err) {
-        if (!err.message.includes('already exists')) {
-          console.log('approved_date column already exists');
+        if (err.code === '42701' || err.message.includes('already exists')) {
+          console.log('✅ approved_date column already exists');
+        } else {
+          console.log('⚠️ Error adding approved_date:', err.message);
         }
       }
       try {
         await db.query('ALTER TABLE applications ADD COLUMN approved_by VARCHAR(255)');
-        console.log('Added approved_by column');
+        console.log('✅ Added approved_by column');
       } catch (err) {
-        if (!err.message.includes('already exists')) {
-          console.log('approved_by column already exists');
+        if (err.code === '42701' || err.message.includes('already exists')) {
+          console.log('✅ approved_by column already exists');
+        } else {
+          console.log('⚠️ Error adding approved_by:', err.message);
         }
       }
     }
