@@ -93,6 +93,30 @@ async function ensureDatabase() {
           console.log('resume_filename column already exists');
         }
       }
+      try {
+        await db.query('ALTER TABLE applications ADD COLUMN is_approved BOOLEAN DEFAULT FALSE');
+        console.log('Added is_approved column');
+      } catch (err) {
+        if (!err.message.includes('already exists')) {
+          console.log('is_approved column already exists');
+        }
+      }
+      try {
+        await db.query('ALTER TABLE applications ADD COLUMN approved_date TIMESTAMP');
+        console.log('Added approved_date column');
+      } catch (err) {
+        if (!err.message.includes('already exists')) {
+          console.log('approved_date column already exists');
+        }
+      }
+      try {
+        await db.query('ALTER TABLE applications ADD COLUMN approved_by VARCHAR(255)');
+        console.log('Added approved_by column');
+      } catch (err) {
+        if (!err.message.includes('already exists')) {
+          console.log('approved_by column already exists');
+        }
+      }
     }
     
     // Check if admin exists
