@@ -763,6 +763,7 @@ const initDB = async () => {
 };
 
 // Initialize before starting server
+// v2.1 - Fixed column selection with defaults
 ensureDatabase().then(() => {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Server running on port ${PORT}`);
