@@ -187,10 +187,17 @@ const getApplications = async (req, res) => {
   try {
     console.log('GET /applications called');
     const result = await db.query(
-      `SELECT *, FALSE as is_approved FROM applications ORDER BY created_at DESC`
+      `SELECT * FROM applications ORDER BY created_at DESC`
     );
     console.log('Applications found:', result.rowCount);
-    res.status(200).json(result.rows);
+    
+    // Add is_approved field to each application if missing
+    const applications = result.rows.map(app => ({
+      ...app,
+      is_approved: app.is_approved || false
+    }));
+    
+    res.status(200).json(applications);
   } catch (err) {
     console.error('GET /applications DB ERROR:', err);
     console.error('Error code:', err.code);
