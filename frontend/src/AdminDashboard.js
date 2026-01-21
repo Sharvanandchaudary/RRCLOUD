@@ -200,10 +200,6 @@ export default function AdminDashboard() {
       position: 'relative',
       boxShadow: isActive ? '0 2px 8px rgba(30, 64, 175, 0.2)' : 'none'
     }),
-      borderBottom: isActive ? '3px solid #667eea' : 'none',
-      marginBottom: '-2px',
-      transition: 'all 0.3s ease'
-    }),
     contentCard: {
       background: 'rgba(255, 255, 255, 0.95)',
       backdropFilter: 'blur(20px)',
