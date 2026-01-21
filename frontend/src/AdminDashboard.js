@@ -402,10 +402,32 @@ export default function AdminDashboard() {
                     }}
                     onClick={(e) => {
                       // Handle download errors gracefully
-                      setTimeout(() => {
-                        // Check if download started - if not, show error message
-                        console.log('Resume download requested for:', app.email);
-                      }, 100);
+                      e.preventDefault();
+                      
+                      let downloadUrl;
+                      if (app.resume_path.startsWith('/api/applications/resume/')) {
+                        // Old format: /api/applications/resume/email
+                        downloadUrl = `https://rrcloud-backend-415414350152.us-central1.run.app${app.resume_path}`;
+                      } else {
+                        // New format: /uploads/filename
+                        const filename = app.resume_path.split('/').pop();
+                        downloadUrl = `https://rrcloud-backend-415414350152.us-central1.run.app/uploads/${filename}`;
+                      }
+                      
+                      // Test if file exists first
+                      fetch(downloadUrl, { method: 'HEAD' })
+                        .then(response => {
+                          if (response.ok && response.headers.get('content-type') !== 'application/json') {
+                            // File exists, proceed with download
+                            window.open(downloadUrl, '_blank');
+                          } else {
+                            // File doesn't exist, show error
+                            alert(`❌ Resume file is not available.\n\n📋 Reason: Files uploaded before recent system updates were lost due to Cloud Run's stateless nature.\n\n💡 Solution: Please contact ${app.full_name} at ${app.email} to resubmit their resume.`);
+                          }
+                        })
+                        .catch(err => {
+                          alert(`❌ Resume download failed.\n\n📋 Please contact ${app.full_name} at ${app.email} to resubmit their resume.`);
+                        });
                     }}
                     onMouseOver={(e) => {
                       e.target.style.background = 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)';

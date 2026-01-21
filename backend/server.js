@@ -96,6 +96,44 @@ app.get('/uploads/:filename', async (req, res) => {
   }
 });
 
+// Handle old API format resume downloads
+app.get('/api/applications/resume/:email', async (req, res) => {
+  const email = req.params.email;
+  
+  console.log(`Resume request for email: ${email}`);
+  
+  try {
+    const dbResult = await db.query(
+      'SELECT resume_data, resume_filename FROM applications WHERE email = $1',
+      [email]
+    );
+    
+    if (dbResult.rows.length > 0 && dbResult.rows[0].resume_data) {
+      const resumeData = dbResult.rows[0].resume_data;
+      const originalFilename = dbResult.rows[0].resume_filename || `resume_${email}`;
+      
+      console.log(`Serving resume from database: ${resumeData.length} bytes`);
+      
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${originalFilename}"`);
+      res.setHeader('Content-Length', resumeData.length);
+      
+      return res.send(resumeData);
+    }
+    
+    console.log(`No resume found for ${email}`);
+    return res.status(404).json({ 
+      error: 'Resume not found',
+      message: 'Resume file is not available. This may happen if the file was uploaded before our latest system update.',
+      suggestion: 'Please contact the applicant to resubmit their resume if needed.'
+    });
+    
+  } catch (dbError) {
+    console.error('Database error while fetching resume:', dbError);
+    return res.status(500).json({ error: 'Failed to retrieve resume from database' });
+  }
+});
+
 // Debug endpoint to list uploaded files
 app.get('/api/debug/uploads', (req, res) => {
   try {

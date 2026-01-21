@@ -431,10 +431,35 @@ export default function RecruiterDashboard() {
                       <td style={styles.td}>
                         {app.resume_path ? (
                           <a
-                            href={`https://rrcloud-backend-415414350152.us-central1.run.app/uploads/${app.resume_path.split('/').pop()}`}
-                            download
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              
+                              let downloadUrl;
+                              if (app.resume_path.startsWith('/api/applications/resume/')) {
+                                // Old format: /api/applications/resume/email
+                                downloadUrl = `https://rrcloud-backend-415414350152.us-central1.run.app${app.resume_path}`;
+                              } else {
+                                // New format: /uploads/filename
+                                const filename = app.resume_path.split('/').pop();
+                                downloadUrl = `https://rrcloud-backend-415414350152.us-central1.run.app/uploads/${filename}`;
+                              }
+                              
+                              // Test if file exists first
+                              fetch(downloadUrl, { method: 'HEAD' })
+                                .then(response => {
+                                  if (response.ok && response.headers.get('content-type') !== 'application/json') {
+                                    // File exists, proceed with download
+                                    window.open(downloadUrl, '_blank');
+                                  } else {
+                                    // File doesn't exist, show error
+                                    alert(`❌ Resume file is not available.\n\n📋 Reason: Files uploaded before recent system updates were lost due to Cloud Run's stateless nature.\n\n💡 Solution: Please contact the candidate ${app.full_name} at ${app.email} to resubmit their resume.`);
+                                  }
+                                })
+                                .catch(err => {
+                                  alert(`❌ Resume download failed.\n\n📋 Please contact the candidate ${app.full_name} at ${app.email} to resubmit their resume.`);
+                                });
+                            }}
                             style={styles.resumeBtn}
                             onMouseOver={(e) => {
                               e.target.style.transform = 'translateY(-1px)';
