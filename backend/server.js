@@ -4,12 +4,27 @@ const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const { Storage } = require('@google-cloud/storage');
 require('dotenv').config();
 const db = require('./db');
 const fs = require('fs');
 
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_jwt_secret';
+
+/* -------------------- GOOGLE CLOUD STORAGE CONFIGURATION -------------------- */
+let storage, bucket;
+const BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'rrcloud-resumes-bucket';
+
+try {
+  storage = new Storage({
+    projectId: process.env.GCS_PROJECT_ID || 'verdant-saga-415414'
+  });
+  bucket = storage.bucket(BUCKET_NAME);
+  console.log(`✅ Google Cloud Storage initialized - Bucket: ${BUCKET_NAME}`);
+} catch (error) {
+  console.log('⚠️ Google Cloud Storage not available, using local storage fallback');
+}
 
 /* -------------------- EMAIL CONFIGURATION -------------------- */
 const transporter = nodemailer.createTransport({
@@ -41,15 +56,33 @@ app.use(cors({
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
-// Dedicated file download route with database fallback
+// Dedicated file download route with Cloud Storage and database fallback
 app.get('/uploads/:filename', async (req, res) => {
   const filename = req.params.filename;
-  const filePath = `./uploads/${filename}`;
   
   console.log(`File download request: ${filename}`);
-  console.log(`File path: ${filePath}`);
   
-  // First, try to serve from filesystem
+  // First, try Cloud Storage
+  if (bucket) {
+    try {
+      const file = bucket.file(`resumes/${filename}`);
+      const [exists] = await file.exists();
+      
+      if (exists) {
+        console.log(`Serving from Cloud Storage: ${filename}`);
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('Content-Disposition', `attachment; filename="${decodeURIComponent(filename)}"`);
+        
+        const stream = file.createReadStream();
+        return stream.pipe(res);
+      }
+    } catch (gcsError) {
+      console.log(`Cloud Storage error: ${gcsError.message}`);
+    }
+  }
+  
+  // Second, try local filesystem
+  const filePath = `./uploads/${filename}`;
   if (fs.existsSync(filePath)) {
     const stats = fs.statSync(filePath);
     console.log(`Serving from filesystem: ${stats.size} bytes`);
@@ -62,7 +95,7 @@ app.get('/uploads/:filename', async (req, res) => {
     return fileStream.pipe(res);
   }
   
-  // Fallback: Try to serve from database
+  // Third, try database fallback
   try {
     console.log(`File not found in filesystem, checking database...`);
     const dbResult = await db.query(
@@ -368,13 +401,47 @@ if (!fs.existsSync('./uploads')) {
   fs.mkdirSync('./uploads');
 }
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) =>
-    cb(null, `${Date.now()}-${file.originalname}`)
+// Custom storage that saves to both local and Cloud Storage
+const customStorage = multer.memoryStorage(); // Store in memory first
+
+const upload = multer({ 
+  storage: customStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
 });
 
-const upload = multer({ storage });
+// Helper function to upload file to Cloud Storage
+async function uploadToCloudStorage(buffer, filename, originalname) {
+  if (!bucket) {
+    console.log('Cloud Storage not available, skipping upload');
+    return null;
+  }
+  
+  try {
+    const file = bucket.file(`resumes/${filename}`);
+    const stream = file.createWriteStream({
+      metadata: {
+        contentType: 'application/octet-stream',
+        metadata: {
+          originalName: originalname
+        }
+      }
+    });
+    
+    return new Promise((resolve, reject) => {
+      stream.on('error', reject);
+      stream.on('finish', () => {
+        console.log(`✅ Uploaded ${filename} to Cloud Storage`);
+        resolve(`resumes/${filename}`);
+      });
+      stream.end(buffer);
+    });
+  } catch (error) {
+    console.log(`⚠️ Cloud Storage upload failed: ${error.message}`);
+    return null;
+  }
+}
 
 /* -------------------- GET APPLICATIONS -------------------- */
 const getApplications = async (req, res) => {
@@ -411,13 +478,41 @@ const submitApplication = async (req, res) => {
   let resumePath = null;
   let resumeFilename = null;
   let resumeData = null;
+  let cloudStoragePath = null;
 
-  // Convert resume file to base64 for storage in database
+  // Handle resume file upload
   if (req.file) {
     resumeFilename = req.file.originalname;
     resumeData = req.file.buffer;
-    // Also keep path format for compatibility
-    resumePath = `/api/applications/resume/${email}`;
+    
+    // Generate unique filename
+    const timestamp = Date.now();
+    const uniqueFilename = `${timestamp}-${req.file.originalname}`;
+    
+    // Upload to Cloud Storage
+    try {
+      cloudStoragePath = await uploadToCloudStorage(req.file.buffer, uniqueFilename, req.file.originalname);
+      if (cloudStoragePath) {
+        resumePath = `/uploads/${uniqueFilename}`;
+        console.log(`✅ Resume uploaded to Cloud Storage: ${uniqueFilename}`);
+      } else {
+        // Fallback to local storage path format
+        resumePath = `/api/applications/resume/${email}`;
+        console.log(`⚠️ Using database fallback for: ${email}`);
+      }
+    } catch (uploadError) {
+      console.log(`⚠️ Cloud Storage upload failed: ${uploadError.message}`);
+      resumePath = `/api/applications/resume/${email}`;
+    }
+    
+    // Also save to local storage as backup (will be lost on deployment but useful for development)
+    try {
+      const localPath = `./uploads/${uniqueFilename}`;
+      fs.writeFileSync(localPath, req.file.buffer);
+      console.log(`✅ Resume also saved locally: ${uniqueFilename}`);
+    } catch (localError) {
+      console.log(`⚠️ Local storage backup failed: ${localError.message}`);
+    }
   }
 
   /* -------- Input Validation -------- */
