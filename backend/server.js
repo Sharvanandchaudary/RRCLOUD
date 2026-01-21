@@ -41,6 +41,70 @@ app.use(cors({
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
+// Dedicated file download route with proper error handling
+app.get('/uploads/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = `./uploads/${filename}`;
+  
+  console.log(`File download request: ${filename}`);
+  console.log(`File path: ${filePath}`);
+  
+  // Check if file exists
+  if (!fs.existsSync(filePath)) {
+    console.log(`File not found: ${filePath}`);
+    return res.status(404).json({ error: 'File not found' });
+  }
+  
+  // Get file stats
+  const stats = fs.statSync(filePath);
+  console.log(`File size: ${stats.size} bytes`);
+  
+  // Set proper headers for file download
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.setHeader('Content-Disposition', `attachment; filename="${decodeURIComponent(filename)}"`);
+  res.setHeader('Content-Length', stats.size);
+  
+  // Stream the file
+  const fileStream = fs.createReadStream(filePath);
+  fileStream.pipe(res);
+  
+  fileStream.on('error', (error) => {
+    console.error('File stream error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to read file' });
+    }
+  });
+});
+
+// Debug endpoint to list uploaded files
+app.get('/api/debug/uploads', (req, res) => {
+  try {
+    if (!fs.existsSync('./uploads')) {
+      return res.json({ message: 'Uploads directory does not exist', files: [] });
+    }
+    
+    const files = fs.readdirSync('./uploads');
+    const fileDetails = files.map(file => {
+      const stats = fs.statSync(`./uploads/${file}`);
+      return {
+        name: file,
+        size: stats.size,
+        created: stats.birthtime,
+        modified: stats.mtime
+      };
+    });
+    
+    res.json({
+      message: 'Files in uploads directory',
+      count: files.length,
+      files: fileDetails
+    });
+  } catch (error) {
+    console.error('Error listing files:', error);
+    res.status(500).json({ error: 'Failed to list files' });
+  }
+});
+
 // Auto-initialize database on startup (v2)
 async function ensureDatabase() {
   try {
