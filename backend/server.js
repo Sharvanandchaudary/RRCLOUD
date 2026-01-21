@@ -41,39 +41,58 @@ app.use(cors({
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
-// Dedicated file download route with proper error handling
-app.get('/uploads/:filename', (req, res) => {
+// Dedicated file download route with database fallback
+app.get('/uploads/:filename', async (req, res) => {
   const filename = req.params.filename;
   const filePath = `./uploads/${filename}`;
   
   console.log(`File download request: ${filename}`);
   console.log(`File path: ${filePath}`);
   
-  // Check if file exists
-  if (!fs.existsSync(filePath)) {
-    console.log(`File not found: ${filePath}`);
-    return res.status(404).json({ error: 'File not found' });
+  // First, try to serve from filesystem
+  if (fs.existsSync(filePath)) {
+    const stats = fs.statSync(filePath);
+    console.log(`Serving from filesystem: ${stats.size} bytes`);
+    
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${decodeURIComponent(filename)}"`);
+    res.setHeader('Content-Length', stats.size);
+    
+    const fileStream = fs.createReadStream(filePath);
+    return fileStream.pipe(res);
   }
   
-  // Get file stats
-  const stats = fs.statSync(filePath);
-  console.log(`File size: ${stats.size} bytes`);
-  
-  // Set proper headers for file download
-  res.setHeader('Content-Type', 'application/octet-stream');
-  res.setHeader('Content-Disposition', `attachment; filename="${decodeURIComponent(filename)}"`);
-  res.setHeader('Content-Length', stats.size);
-  
-  // Stream the file
-  const fileStream = fs.createReadStream(filePath);
-  fileStream.pipe(res);
-  
-  fileStream.on('error', (error) => {
-    console.error('File stream error:', error);
-    if (!res.headersSent) {
-      res.status(500).json({ error: 'Failed to read file' });
+  // Fallback: Try to serve from database
+  try {
+    console.log(`File not found in filesystem, checking database...`);
+    const dbResult = await db.query(
+      'SELECT resume_data, resume_filename FROM applications WHERE resume_path LIKE $1 OR resume_filename = $2',
+      [`%${filename}%`, filename]
+    );
+    
+    if (dbResult.rows.length > 0 && dbResult.rows[0].resume_data) {
+      const resumeData = dbResult.rows[0].resume_data;
+      const originalFilename = dbResult.rows[0].resume_filename || filename;
+      
+      console.log(`Serving from database: ${resumeData.length} bytes`);
+      
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${decodeURIComponent(originalFilename)}"`);
+      res.setHeader('Content-Length', resumeData.length);
+      
+      return res.send(resumeData);
     }
-  });
+    
+    console.log(`File not found in database either`);
+    return res.status(404).json({ 
+      error: 'File not found', 
+      message: 'Resume file is not available. It may have been uploaded before database storage was implemented.' 
+    });
+    
+  } catch (dbError) {
+    console.error('Database error while fetching file:', dbError);
+    return res.status(500).json({ error: 'Failed to retrieve file from database' });
+  }
 });
 
 // Debug endpoint to list uploaded files
