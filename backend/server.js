@@ -85,8 +85,9 @@ app.get('/uploads/:filename', async (req, res) => {
     
     console.log(`File not found in database either`);
     return res.status(404).json({ 
-      error: 'File not found', 
-      message: 'Resume file is not available. It may have been uploaded before database storage was implemented.' 
+      error: 'Resume not found',
+      message: 'Resume file is not available. This may happen if the file was uploaded before our latest system update.',
+      suggestion: 'Please contact the applicant to resubmit their resume if needed.'
     });
     
   } catch (dbError) {
@@ -117,7 +118,11 @@ app.get('/api/debug/uploads', (req, res) => {
       message: 'Files in uploads directory',
       count: files.length,
       files: fileDetails,
-      note: 'Note: Cloud Run containers are stateless. Files uploaded before the latest deployment may not be available.'
+      note: 'Cloud Run containers are stateless. Files uploaded before the latest deployment may not be available.',
+      troubleshooting: {
+        resumeIssues: 'If resume downloads fail, files were likely uploaded before recent system updates',
+        solution: 'Ask applicants to resubmit resumes, or implement Cloud Storage for persistence'
+      }
     });
   } catch (error) {
     console.error('Error listing files:', error);

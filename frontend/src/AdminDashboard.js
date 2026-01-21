@@ -419,7 +419,23 @@ export default function AdminDashboard() {
                     📄 Download Resume
                   </a>
                 ) : (
-                  <span style={{color: '#9ca3af', fontSize: '13px', fontStyle: 'italic'}}>No resume uploaded</span>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                    <span style={{color: '#9ca3af', fontSize: '13px', fontStyle: 'italic'}}>No resume uploaded</span>
+                    <button
+                      onClick={() => alert(`Please contact ${app.email} to request resume resubmission`)}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '11px',
+                        background: '#fef3c7',
+                        color: '#92400e',
+                        border: '1px solid #fcd34d',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Request Resume
+                    </button>
+                  </div>
                 )}
               </td>
               <td style={styles.td}>{new Date(app.created_at).toLocaleDateString()}</td>

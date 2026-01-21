@@ -7,6 +7,7 @@ import StudentDashboard from './StudentDashboard';
 import AdminDashboard from './AdminDashboard';
 import AccountSetup from './AccountSetup';
 import StudentAccountCreation from './StudentAccountCreation';
+import ApplicationSuccess from './ApplicationSuccess';
 
 // --- ASSETS ---
 const IMAGES = {
@@ -218,6 +219,7 @@ export default function App() {
         <Route path="/student-dashboard" element={<StudentDashboard />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/apply" element={<ApplyPage />} />
+        <Route path="/application-success" element={<ApplicationSuccess />} />
         <Route path="/services" element={<Home />} />
       </Routes>
     </BrowserRouter>

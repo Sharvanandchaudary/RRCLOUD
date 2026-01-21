@@ -28,8 +28,9 @@ export default function StudentSignup() {
       });
 
       if (response.ok) {
-        alert("✅ Application Submitted Successfully!");
-        navigate('/student-login');
+        // Show success message and redirect to success page
+        alert("✅ Application Submitted Successfully! We will review your application and contact you via email.");
+        navigate('/application-success');
       } else {
         const errorText = await response.text();
         alert("Server Error: " + errorText);
