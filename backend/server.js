@@ -254,6 +254,51 @@ async function ensureDatabase() {
         ['admin@zgenai.com', 'admin123', 'System Admin', 'admin']
       );
     }
+
+    // Create test student user
+    const checkStudent = await db.query(
+      'SELECT * FROM users WHERE email = $1',
+      ['user1@example.com']
+    );
+    
+    if (checkStudent.rowCount === 0) {
+      console.log('Creating test student user...');
+      await db.query(
+        `INSERT INTO users (email, password_hash, full_name, role)
+         VALUES ($1, $2, $3, $4)`,
+        ['user1@example.com', 'password', 'Student User', 'student']
+      );
+    }
+
+    // Create test recruiter user
+    const checkRecruiter = await db.query(
+      'SELECT * FROM users WHERE email = $1',
+      ['user2@example.com']
+    );
+    
+    if (checkRecruiter.rowCount === 0) {
+      console.log('Creating test recruiter user...');
+      await db.query(
+        `INSERT INTO users (email, password_hash, full_name, role)
+         VALUES ($1, $2, $3, $4)`,
+        ['user2@example.com', 'password', 'Recruiter User', 'recruiter']
+      );
+    }
+
+    // Create test admin user
+    const checkTestAdmin = await db.query(
+      'SELECT * FROM users WHERE email = $1',
+      ['user3@example.com']
+    );
+    
+    if (checkTestAdmin.rowCount === 0) {
+      console.log('Creating test admin user...');
+      await db.query(
+        `INSERT INTO users (email, password_hash, full_name, role)
+         VALUES ($1, $2, $3, $4)`,
+        ['user3@example.com', 'password', 'Admin User', 'admin']
+      );
+    }
     
     console.log('✅ Database schema is ready');
   } catch (err) {
@@ -774,7 +819,7 @@ function verifyToken(req, res, next) {
 }
 
 app.post('/auth/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, role } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'email and password required' });
 
   try {
@@ -792,6 +837,14 @@ app.post('/auth/login', async (req, res) => {
     }
 
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+
+    // Role-based access control
+    if (role && user.role !== role) {
+      return res.status(403).json({ 
+        error: 'Access denied',
+        message: `Your account does not have ${role} permissions. You are registered as: ${user.role}` 
+      });
+    }
 
     // Sign JWT and return token + user info
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });

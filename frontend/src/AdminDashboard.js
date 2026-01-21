@@ -385,7 +385,7 @@ export default function AdminDashboard() {
               <td style={styles.td}>
                 {app.resume_path ? (
                   <a 
-                    href={`https://rrcloud-backend-415414350152.us-central1.run.app${app.resume_path}`}
+                    href={`https://rrcloud-backend-415414350152.us-central1.run.app/uploads/${app.resume_path.split('/').pop()}`}
                     download
                     target="_blank"
                     rel="noopener noreferrer"

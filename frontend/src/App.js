@@ -3,8 +3,10 @@ import axios from 'axios';
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import StudentSignup from './StudentSignup';
 import StudentLogin from './StudentLogin';
+import UnifiedLogin from './UnifiedLogin';
 import StudentDashboard from './StudentDashboard';
 import AdminDashboard from './AdminDashboard';
+import RecruiterDashboard from './RecruiterDashboard';
 import AccountSetup from './AccountSetup';
 import StudentAccountCreation from './StudentAccountCreation';
 import ApplicationSuccess from './ApplicationSuccess';
@@ -75,7 +77,7 @@ const Navbar = () => (
         <Link to="/" style={styles.navLink}>Home</Link>
         <Link to="/services" style={styles.navLink}>Expertise</Link>
         <Link to="/apply" style={styles.navBtnApply}>🚀 Apply Now</Link>
-        <Link to="/login" style={styles.navBtnLogin}>Client Login</Link>
+        <Link to="/login" style={styles.navBtnLogin}>Login</Link>
     </div>
   </nav>
 );
@@ -212,11 +214,12 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<UnifiedLogin />} />
         <Route path="/student-login" element={<StudentLogin />} />
         <Route path="/account-setup" element={<AccountSetup />} />
         <Route path="/account-creation" element={<StudentAccountCreation />} />
         <Route path="/student-dashboard" element={<StudentDashboard />} />
+        <Route path="/recruiter-dashboard" element={<RecruiterDashboard />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/apply" element={<ApplyPage />} />
         <Route path="/application-success" element={<ApplicationSuccess />} />
