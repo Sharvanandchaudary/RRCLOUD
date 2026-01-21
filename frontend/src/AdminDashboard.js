@@ -201,17 +201,12 @@ export default function AdminDashboard() {
       boxShadow: isActive ? '0 2px 8px rgba(30, 64, 175, 0.2)' : 'none'
     }),
     contentCard: {
-      background: 'rgba(255, 255, 255, 0.95)',
-      backdropFilter: 'blur(20px)',
-      borderRadius: '20px',
-      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-      overflow: 'hidden',
-      border: '1px solid rgba(255, 255, 255, 0.2)'
-    },
-      background: 'white',
+      background: 'rgba(255, 255, 255, 0.98)',
+      backdropFilter: 'blur(10px)',
       borderRadius: '12px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-      overflow: 'hidden'
+      boxShadow: '0 2px 20px rgba(0, 0, 0, 0.08)',
+      overflow: 'hidden',
+      border: '1px solid rgba(226, 232, 240, 0.5)'
     },
     table: {
       width: '100%',
