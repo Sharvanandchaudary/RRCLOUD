@@ -547,38 +547,73 @@ app.post('/api/applications/:id/approve', async (req, res) => {
     const emailContent = {
       from: 'admin@zgenai.org',
       to: application.email,
-      subject: 'Account Activation - Login Credentials',
+      subject: 'Welcome to ZgenAI - Account Activation',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
-          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h2 style="color: #1e3a8a; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Account Activation</h2>
-            <p style="color: #374151; line-height: 1.6;">Dear ${application.full_name},</p>
-            <p style="color: #374151; line-height: 1.6;">Your application has been approved. Please find your login credentials below:</p>
-            <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #1e40af;">
-              <p style="margin: 5px 0; color: #374151;"><strong>Email:</strong> ${application.email}</p>
-              <p style="margin: 5px 0; color: #374151;"><strong>Password:</strong> ${password}</p>
-              <p style="margin: 5px 0; color: #374151;"><strong>Login URL:</strong> <a href="https://rrcloud-frontend-nsmgws4u4a-uc.a.run.app/student-login" style="color: #1e40af;">Access Portal</a></p>
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 20px; background-color: #f8fafc;">
+          <div style="background-color: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #1e3a8a; font-size: 28px; margin: 0; font-weight: 700;">Welcome to ZgenAI</h1>
+              <div style="height: 3px; background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%); width: 100px; margin: 15px auto;"></div>
             </div>
-            <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">Please keep these credentials secure and change your password after first login.</p>
-            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-            <p style="color: #6b7280; font-size: 14px;">Best regards,<br>Administration Team</p>
+            
+            <p style="color: #374151; line-height: 1.7; font-size: 16px;">Dear ${application.full_name},</p>
+            
+            <p style="color: #374151; line-height: 1.7; font-size: 16px;">Congratulations! We are excited to inform you that your application has been approved and you are now part of the ZgenAI family.</p>
+            
+            <div style="background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%); padding: 25px; border-radius: 10px; margin: 25px 0; border-left: 4px solid #1e40af;">
+              <h3 style="color: #1e3a8a; margin: 0 0 15px 0; font-size: 18px;">About ZgenAI</h3>
+              <p style="color: #4b5563; line-height: 1.6; margin: 0; font-size: 14px;">ZgenAI is a leading technology company focused on artificial intelligence and machine learning solutions. We empower businesses and individuals with cutting-edge AI technologies, innovative training programs, and comprehensive development resources. Join our community of innovators and shape the future of AI.</p>
+            </div>
+            
+            <h3 style="color: #1e3a8a; margin: 25px 0 15px 0; font-size: 18px;">Your Account Details</h3>
+            <div style="background-color: #f8fafc; padding: 25px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
+              <p style="margin: 8px 0; color: #374151; font-size: 15px;"><strong style="color: #1e3a8a;">Login Email:</strong> ${application.email}</p>
+              <p style="margin: 8px 0; color: #374151; font-size: 15px;"><strong style="color: #1e3a8a;">Temporary Password:</strong> ${password}</p>
+              <p style="margin: 8px 0; color: #374151; font-size: 15px;"><strong style="color: #1e3a8a;">Portal Access:</strong> <a href="https://rrcloud-frontend-415414350152.us-central1.run.app/student-login" style="color: #1e40af; text-decoration: none; font-weight: 600;">Click here to login</a></p>
+            </div>
+            
+            <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #f59e0b;">
+              <h4 style="color: #92400e; margin: 0 0 10px 0; font-size: 16px;">🔐 Important Security Steps</h4>
+              <ol style="color: #78350f; margin: 0; padding-left: 20px; line-height: 1.6;">
+                <li>Login with the temporary credentials above</li>
+                <li>You will be prompted to create a new secure password</li>
+                <li>Keep your login credentials confidential</li>
+                <li>Contact support if you face any issues</li>
+              </ol>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding-top: 25px; border-top: 1px solid #e2e8f0;">
+              <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">Welcome to the future of AI innovation</p>
+              <p style="color: #374151; font-weight: 600; margin: 10px 0;">ZgenAI Administration Team</p>
+              <p style="color: #9ca3af; font-size: 12px; margin: 5px 0;">This is an automated message. Please do not reply to this email.</p>
+            </div>
           </div>
         </div>
       `,
-      text: `Account Activation - Login Credentials
+      text: `Welcome to ZgenAI - Account Activation
 
 Dear ${application.full_name},
 
-Your application has been approved. Please find your login credentials below:
+Congratulations! We are excited to inform you that your application has been approved and you are now part of the ZgenAI family.
 
-Email: ${application.email}
-Password: ${password}
-Login: https://rrcloud-frontend-nsmgws4u4a-uc.a.run.app/student-login
+About ZgenAI:
+ZgenAI is a leading technology company focused on artificial intelligence and machine learning solutions. We empower businesses and individuals with cutting-edge AI technologies, innovative training programs, and comprehensive development resources.
 
-Please keep these credentials secure and change your password after first login.
+Your Account Details:
+Login Email: ${application.email}
+Temporary Password: ${password}
+Portal Access: https://rrcloud-frontend-415414350152.us-central1.run.app/student-login
+
+Important Security Steps:
+1. Login with the temporary credentials above
+2. You will be prompted to create a new secure password
+3. Keep your login credentials confidential
+4. Contact support if you face any issues
+
+Welcome to the future of AI innovation!
 
 Best regards,
-Administration Team`
+ZgenAI Administration Team`
     };
 
     // Send email

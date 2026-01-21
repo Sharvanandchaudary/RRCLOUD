@@ -379,6 +379,7 @@ export default function AdminDashboard() {
             <th style={styles.th}>Candidate Name</th>
             <th style={styles.th}>Email</th>
             <th style={styles.th}>Phone</th>
+            <th style={styles.th}>Resume</th>
             <th style={styles.th}>Date Applied</th>
             {type === 'pending' && <th style={styles.th}>Actions</th>}
             {type === 'approved' && <th style={styles.th}>Approved Date</th>}
@@ -390,6 +391,39 @@ export default function AdminDashboard() {
               <td style={styles.td}><strong>{app.full_name}</strong></td>
               <td style={styles.td}>{app.email}</td>
               <td style={styles.td}>{app.phone || '-'}</td>
+              <td style={styles.td}>
+                {app.resume_path ? (
+                  <a 
+                    href={`https://rrcloud-backend-415414350152.us-central1.run.app${app.resume_path}`}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: '#1e40af',
+                      textDecoration: 'none',
+                      padding: '8px 16px',
+                      background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      border: '1px solid #bfdbfe',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.background = 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)';
+                      e.target.style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.background = 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)';
+                      e.target.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    📄 Download Resume
+                  </a>
+                ) : (
+                  <span style={{color: '#9ca3af', fontSize: '13px', fontStyle: 'italic'}}>No resume uploaded</span>
+                )}
+              </td>
               <td style={styles.td}>{new Date(app.created_at).toLocaleDateString()}</td>
               {type === 'pending' && (
                 <td style={{...styles.td, ...styles.actionCell}}>
