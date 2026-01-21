@@ -116,7 +116,8 @@ app.get('/api/debug/uploads', (req, res) => {
     res.json({
       message: 'Files in uploads directory',
       count: files.length,
-      files: fileDetails
+      files: fileDetails,
+      note: 'Note: Cloud Run containers are stateless. Files uploaded before the latest deployment may not be available.'
     });
   } catch (error) {
     console.error('Error listing files:', error);
