@@ -1,14 +1,14 @@
 # Build stage
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package.json only first
+COPY package.json ./
 
 # Clear npm cache and install dependencies
 RUN npm cache clean --force && \
-    npm ci --no-audit --no-fund
+    npm install --no-audit --no-fund --production=false
 
 # Copy source code
 COPY . .
