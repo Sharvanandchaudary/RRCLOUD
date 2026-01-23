@@ -1088,13 +1088,26 @@ app.get('/api/users', verifyToken, async (req, res) => {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
-    const result = await db.query(`
-      SELECT id, email, full_name, role, 
-             COALESCE(status, 'active') as status,
-             phone, created_at
-      FROM users 
-      ORDER BY created_at DESC
-    `);
+    // Try with all columns first, fall back if columns don't exist
+    let result;
+    try {
+      result = await db.query(`
+        SELECT id, email, full_name, role, 
+               COALESCE(status, 'active') as status,
+               phone, created_at
+        FROM users 
+        ORDER BY created_at DESC
+      `);
+    } catch (err) {
+      // Fallback for databases without phone/status columns
+      console.log('Falling back to basic user query (missing columns)');
+      result = await db.query(`
+        SELECT id, email, full_name, role, created_at,
+               'active' as status, null as phone
+        FROM users 
+        ORDER BY created_at DESC
+      `);
+    }
 
     res.json({ users: result.rows });
   } catch (err) {
@@ -1126,11 +1139,23 @@ app.post('/api/users', verifyToken, async (req, res) => {
     const defaultPassword = 'password123';
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
-    const result = await db.query(
-      `INSERT INTO users (email, password_hash, full_name, role, phone, status) 
-       VALUES ($1, $2, $3, $4, $5, 'active') RETURNING *`,
-      [email, hashedPassword, name, role, phone || null]
-    );
+    let result;
+    try {
+      // Try with all columns
+      result = await db.query(
+        `INSERT INTO users (email, password_hash, full_name, role, phone, status) 
+         VALUES ($1, $2, $3, $4, $5, 'active') RETURNING *`,
+        [email, hashedPassword, name, role, phone || null]
+      );
+    } catch (err) {
+      // Fallback for databases without phone/status columns
+      console.log('Falling back to basic user creation (missing columns)');
+      result = await db.query(
+        `INSERT INTO users (email, password_hash, full_name, role) 
+         VALUES ($1, $2, $3, $4) RETURNING *`,
+        [email, hashedPassword, name, role]
+      );
+    }
 
     // Send welcome email with credentials
     try {
