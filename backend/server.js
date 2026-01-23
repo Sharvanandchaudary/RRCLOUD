@@ -1537,12 +1537,9 @@ const initDB = async () => {
 
 // Initialize before starting server
 // v2.2 - Force backend rebuild with defaults
-ensureDatabase().then(() => {
+ensureDatabase().finally(() => {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   });
-}).catch(err => {
-  console.error('Failed to start server:', err);
-  process.exit(1);
 });

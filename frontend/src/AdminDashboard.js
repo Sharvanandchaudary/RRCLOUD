@@ -227,12 +227,6 @@ export default function AdminDashboard() {
       alert(`❌ Error ${action}ing user: ` + err.message);
     }
   };
-        throw new Error(`Failed to ${action} user`);
-      }
-    } catch (err) {
-      alert(`Error: ${err.message}`);
-    }
-  };
 
   const handleDeleteUser = async (userId, email) => {
     if (!window.confirm(`⚠️ PERMANENT DELETION WARNING ⚠️\n\nAre you sure you want to DELETE this user account?\n\n👤 User: ${email}\n\n🚨 This action cannot be undone!\n🚨 All user data will be permanently removed!`)) return;
@@ -1050,67 +1044,6 @@ ZgenAI Team`;
             <div style={{fontSize: '48px', marginBottom: '20px'}}>👥</div>
             <div style={{fontWeight: '600', marginBottom: '10px'}}>No users found</div>
             <div>Try adjusting your search criteria or create a new user</div>
-          </div>
-        )}
-      </div>
-    );
-  };
-                    backgroundColor: user.role === 'admin' ? '#fef3c7' : 
-                                   user.role === 'recruiter' ? '#dbeafe' :
-                                   user.role === 'trainer' ? '#f3e8ff' : '#d1fae5',
-                    color: user.role === 'admin' ? '#92400e' : 
-                           user.role === 'recruiter' ? '#1e40af' :
-                           user.role === 'trainer' ? '#7c3aed' : '#166534'
-                  }}>
-                    {user.role}
-                  </span>
-                </td>
-                <td style={styles.td}>
-                  <span style={{
-                    padding: '4px 8px',
-                    borderRadius: '12px',
-                    fontSize: '11px',
-                    fontWeight: '600',
-                    backgroundColor: user.status === 'blocked' ? '#fee2e2' : '#d1fae5',
-                    color: user.status === 'blocked' ? '#dc2626' : '#166534'
-                  }}>
-                    {user.status === 'blocked' ? '🚫 Blocked' : '✅ Active'}
-                  </span>
-                </td>
-                <td style={{...styles.td, ...styles.actionCell}}>
-                  <button
-                    onClick={() => handleSendRatingEmail(user)}
-                    style={{...styles.btn('secondary'), fontSize: '12px', padding: '6px 12px'}}
-                    title="Send rating email"
-                  >
-                    ⭐ Rate
-                  </button>
-                  <button
-                    onClick={() => handleBlockUser(user.id, user.status)}
-                    style={{
-                      ...styles.btn(user.status === 'blocked' ? 'approve' : 'reject'), 
-                      fontSize: '12px', 
-                      padding: '6px 12px'
-                    }}
-                  >
-                    {user.status === 'blocked' ? '🔓 Unblock' : '🚫 Block'}
-                  </button>
-                  <button
-                    onClick={() => handleDeleteUser(user.id, user.email)}
-                    style={{...styles.btn('reject'), fontSize: '12px', padding: '6px 12px'}}
-                    title="Delete user account"
-                  >
-                    🗑️ Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {users.length === 0 && (
-          <div style={{padding: '40px', textAlign: 'center', color: '#666'}}>
-            No users found. Create your first user account above.
           </div>
         )}
       </div>

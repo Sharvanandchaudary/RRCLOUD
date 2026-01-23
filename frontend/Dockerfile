@@ -35,4 +35,3 @@ EXPOSE 80
 
 # Start nginx with runtime config injection
 CMD ["/docker-entrypoint.sh"]
-CMD ["nginx", "-g", "daemon off;"]
