@@ -18,12 +18,12 @@ const BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'rrcloud-resumes-bucket';
 
 try {
   storage = new Storage({
-    projectId: process.env.GCS_PROJECT_ID || 'verdant-saga-415414'
+    projectId: process.env.GCS_PROJECT_ID || 'rrcloud-platform'
   });
   bucket = storage.bucket(BUCKET_NAME);
   console.log(`✅ Google Cloud Storage initialized - Bucket: ${BUCKET_NAME}`);
 } catch (error) {
-  console.log('⚠️ Google Cloud Storage not available, using local storage fallback');
+  console.log('⚠️ Google Cloud Storage not available, using local storage fallback:', error.message);
 }
 
 /* -------------------- EMAIL CONFIGURATION -------------------- */
@@ -137,24 +137,26 @@ app.get('/api/applications/resume/:email', async (req, res) => {
   
   try {
     const dbResult = await db.query(
-      'SELECT resume_data, resume_filename FROM applications WHERE email = $1',
+      'SELECT resume_data, resume_filename, full_name FROM applications WHERE email = $1',
       [email]
     );
     
     if (dbResult.rows.length > 0 && dbResult.rows[0].resume_data) {
       const resumeData = dbResult.rows[0].resume_data;
-      const originalFilename = dbResult.rows[0].resume_filename || `resume_${email}`;
+      const originalFilename = dbResult.rows[0].resume_filename || `resume_${dbResult.rows[0].full_name}.pdf`;
       
-      console.log(`Serving resume from database: ${resumeData.length} bytes`);
+      console.log(`✅ Serving resume from database: ${resumeData.length} bytes`);
       
+      // Set proper headers for file download
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', `attachment; filename="${originalFilename}"`);
       res.setHeader('Content-Length', resumeData.length);
+      res.setHeader('Cache-Control', 'no-cache');
       
       return res.send(resumeData);
     }
     
-    console.log(`No resume found for ${email}`);
+    console.log(`❌ No resume found for ${email}`);
     return res.status(404).json({ 
       error: 'Resume not found',
       message: 'Resume file is not available. This may happen if the file was uploaded before our latest system update.',
@@ -164,6 +166,34 @@ app.get('/api/applications/resume/:email', async (req, res) => {
   } catch (dbError) {
     console.error('Database error while fetching resume:', dbError);
     return res.status(500).json({ error: 'Failed to retrieve resume from database' });
+  }
+});
+
+// Debug endpoint to check resume data availability
+app.get('/api/debug/resume-data', async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT id, email, full_name, resume_path, resume_filename, LENGTH(resume_data) as data_size FROM applications WHERE resume_path IS NOT NULL ORDER BY id DESC LIMIT 10'
+    );
+    
+    const resumeInfo = result.rows.map(row => ({
+      id: row.id,
+      email: row.email,
+      full_name: row.full_name,
+      resume_path: row.resume_path,
+      filename: row.resume_filename,
+      has_data: row.data_size > 0,
+      data_size_bytes: row.data_size || 0
+    }));
+    
+    res.json({
+      message: 'Resume data status',
+      total_with_paths: result.rows.length,
+      resumes: resumeInfo
+    });
+  } catch (error) {
+    console.error('Error checking resume data:', error);
+    res.status(500).json({ error: 'Failed to check resume data' });
   }
 });
 
