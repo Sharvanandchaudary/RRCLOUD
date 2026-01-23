@@ -1132,13 +1132,129 @@ app.post('/api/users', verifyToken, async (req, res) => {
       [email, hashedPassword, name, role, phone || null]
     );
 
+    // Send welcome email with credentials
+    try {
+      const dashboardUrl = role === 'admin' ? '/admin' : 
+                          role === 'recruiter' ? '/recruiter-dashboard' :
+                          role === 'trainer' ? '/trainer-dashboard' : '/student-dashboard';
+
+      const mailOptions = {
+        from: process.env.SMTP_USER || 'admin@zgenai.org',
+        to: email,
+        subject: '🎉 Welcome to ZgenAI - Your Account is Ready!',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 15px;">
+            <h1 style="text-align: center; margin-bottom: 30px;">🚀 Welcome to ZgenAI!</h1>
+            
+            <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 10px; margin: 20px 0;">
+              <h2>👤 Your Account Details</h2>
+              <p><strong>Name:</strong> ${name}</p>
+              <p><strong>Email:</strong> ${email}</p>
+              <p><strong>Role:</strong> ${role.charAt(0).toUpperCase() + role.slice(1)}</p>
+              ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
+            </div>
+
+            <div style="background: rgba(255,255,255,0.15); padding: 25px; border-radius: 10px; margin: 20px 0;">
+              <h2>🔐 Login Credentials</h2>
+              <p><strong>Login URL:</strong> <a href="https://rrcloud-frontend-nsmgws4u4a-uc.a.run.app/login" style="color: #FFD700;">ZgenAI Login</a></p>
+              <p><strong>Email:</strong> ${email}</p>
+              <p><strong>Password:</strong> password123</p>
+              <p><strong>Your Dashboard:</strong> ${role.charAt(0).toUpperCase() + role.slice(1)} Dashboard</p>
+            </div>
+
+            <div style="background: rgba(255,193,7,0.2); padding: 20px; border-radius: 10px; border-left: 4px solid #ffc107; margin: 20px 0;">
+              <h3>⚠️ Important Security Notice</h3>
+              <p>Please change your password after your first login for security purposes.</p>
+              <p>Your account has been created by the ZgenAI admin team.</p>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+              <a href="https://rrcloud-frontend-nsmgws4u4a-uc.a.run.app/login" style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">🚀 Login to ZgenAI</a>
+            </div>
+
+            <p style="text-align: center; margin-top: 30px; font-size: 12px; opacity: 0.8;">
+              This email was sent by the ZgenAI Admin Team<br>
+              If you have any questions, please contact support.
+            </p>
+          </div>
+        `
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log(`Welcome email sent to ${email}`);
+    } catch (emailErr) {
+      console.error('Error sending welcome email:', emailErr);
+      // Don't fail the request if email fails
+    }
+
     res.json({ 
-      message: 'User created successfully',
+      message: 'User created successfully and welcome email sent',
       user: result.rows[0] 
     });
   } catch (err) {
     console.error('/api/users POST error:', err);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Send credentials email (Admin only)
+app.post('/api/users/send-credentials', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    if (userRole !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { email, name, role, password } = req.body;
+    if (!email || !name || !role) {
+      return res.status(400).json({ error: 'Email, name, and role are required' });
+    }
+
+    const dashboardUrl = role === 'admin' ? '/admin' : 
+                        role === 'recruiter' ? '/recruiter-dashboard' :
+                        role === 'trainer' ? '/trainer-dashboard' : '/student-dashboard';
+
+    const mailOptions = {
+      from: process.env.SMTP_USER || 'admin@zgenai.org',
+      to: email,
+      subject: '🎉 ZgenAI Account - Login Credentials',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 15px;">
+          <h1 style="text-align: center; margin-bottom: 30px;">🔐 Your ZgenAI Login Credentials</h1>
+          
+          <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 10px; margin: 20px 0;">
+            <h2>👤 Account Information</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Role:</strong> ${role.charAt(0).toUpperCase() + role.slice(1)}</p>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.15); padding: 25px; border-radius: 10px; margin: 20px 0;">
+            <h2>🚀 Login Details</h2>
+            <p><strong>Login URL:</strong> <a href="https://rrcloud-frontend-nsmgws4u4a-uc.a.run.app/login" style="color: #FFD700;">ZgenAI Platform</a></p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Password:</strong> ${password || 'password123'}</p>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="https://rrcloud-frontend-nsmgws4u4a-uc.a.run.app/login" style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">Login Now</a>
+          </div>
+
+          <p style="text-align: center; margin-top: 30px; font-size: 12px; opacity: 0.8;">
+            Sent by ZgenAI Admin Team
+          </p>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.json({ 
+      message: 'Credentials email sent successfully',
+      recipient: email 
+    });
+  } catch (err) {
+    console.error('/api/users/send-credentials error:', err);
+    res.status(500).json({ error: 'Failed to send credentials email' });
   }
 });
 

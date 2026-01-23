@@ -12,6 +12,13 @@ export default function AdminDashboard() {
   const [showUserModal, setShowUserModal] = useState(false);
   const [userForm, setUserForm] = useState({ name: '', email: '', phone: '', role: 'student' });
   const [selectedUser, setSelectedUser] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [emailMessage, setEmailMessage] = useState('');
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
   useEffect(() => {
     loadApplications();
@@ -20,13 +27,16 @@ export default function AdminDashboard() {
 
   const loadUsers = async () => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
-      const url = backendUrl ? `${backendUrl}/users` : '/users';
+      const token = localStorage.getItem('token');
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
+      const url = `${backendUrl}/api/users`;
       
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (res.ok) {
         const data = await res.json();
-        setUsers(data);
+        setUsers(data.users || []);
       }
     } catch (err) {
       console.error('Error loading users:', err);
@@ -131,53 +141,92 @@ export default function AdminDashboard() {
 
   // User Management Functions
   const handleCreateUser = async () => {
-    if (!userForm.name || !userForm.email) {
-      alert('Name and email are required');
+    if (!userForm.name || !userForm.email || !userForm.role) {
+      alert('Name, email, and role are required');
       return;
     }
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
-      const url = backendUrl ? `${backendUrl}/users` : '/users';
+      const token = localStorage.getItem('token');
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
 
-      const res = await fetch(url, {
+      const res = await fetch(`${backendUrl}/api/users`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
-          full_name: userForm.name,
+          name: userForm.name,
           email: userForm.email,
           phone: userForm.phone,
-          role: userForm.role,
-          password: 'password123' // Default password
+          role: userForm.role
         })
       });
 
       if (res.ok) {
-        alert(`User created successfully!\nEmail: ${userForm.email}\nPassword: password123\nRole: ${userForm.role}`);
+        // Send welcome email with credentials
+        await fetch(`${backendUrl}/api/users/send-credentials`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            email: userForm.email,
+            name: userForm.name,
+            role: userForm.role,
+            password: 'password123'
+          })
+        });
+
+        alert(`✅ User created successfully!\\n📧 Login credentials have been emailed to: ${userForm.email}\\n\\n👤 User Details:\\nName: ${userForm.name}\\nEmail: ${userForm.email}\\nRole: ${userForm.role.charAt(0).toUpperCase() + userForm.role.slice(1)}\\nPhone: ${userForm.phone || 'Not provided'}\\n\\n🔐 Default Password: password123\\n(User will be prompted to change on first login)`);
         setShowUserModal(false);
         setUserForm({ name: '', email: '', phone: '', role: 'student' });
         loadUsers();
       } else {
-        throw new Error('Failed to create user');
+        const error = await res.json();
+        alert(`❌ Error: ${error.message || 'Failed to create user'}`);
       }
     } catch (err) {
-      alert('Error creating user: ' + err.message);
+      console.error('Error creating user:', err);
+      alert('❌ Error creating user: ' + err.message);
     }
   };
 
   const handleBlockUser = async (userId, currentStatus) => {
     const action = currentStatus === 'blocked' ? 'unblock' : 'block';
+    const actionText = currentStatus === 'blocked' ? 'Unblock' : 'Block';
+    
     if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
-      const url = backendUrl ? `${backendUrl}/users/${userId}/${action}` : `/users/${userId}/${action}`;
+      const token = localStorage.getItem('token');
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
 
-      const res = await fetch(url, { method: 'POST' });
+      const res = await fetch(`${backendUrl}/api/users/${userId}/block`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          blocked: currentStatus !== 'blocked'
+        })
+      });
+
       if (res.ok) {
-        alert(`User ${action}ed successfully`);
+        alert(`✅ User ${action}ed successfully`);
         loadUsers();
       } else {
+        const error = await res.json();
+        alert(`❌ Error: ${error.message || `Failed to ${action} user`}`);
+      }
+    } catch (err) {
+      console.error(`Error ${action}ing user:`, err);
+      alert(`❌ Error ${action}ing user: ` + err.message);
+    }
+  };
         throw new Error(`Failed to ${action} user`);
       }
     } catch (err) {
@@ -186,40 +235,56 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteUser = async (userId, email) => {
-    if (!window.confirm(`Are you sure you want to DELETE this user account?\n\nEmail: ${email}\n\nThis action cannot be undone!`)) return;
+    if (!window.confirm(`⚠️ PERMANENT DELETION WARNING ⚠️\n\nAre you sure you want to DELETE this user account?\n\n👤 User: ${email}\n\n🚨 This action cannot be undone!\n🚨 All user data will be permanently removed!`)) return;
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
-      const url = backendUrl ? `${backendUrl}/users/${userId}` : `/users/${userId}`;
+      const token = localStorage.getItem('token');
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
 
-      const res = await fetch(url, { method: 'DELETE' });
+      const res = await fetch(`${backendUrl}/api/users/${userId}`, { 
+        method: 'DELETE',
+        headers: { 
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
       if (res.ok) {
-        alert('User deleted successfully');
+        alert('✅ User account deleted successfully');
         loadUsers();
       } else {
-        throw new Error('Failed to delete user');
+        const error = await res.json();
+        alert(`❌ Error: ${error.message || 'Failed to delete user'}`);
       }
     } catch (err) {
-      alert('Error deleting user: ' + err.message);
+      console.error('Error deleting user:', err);
+      alert('❌ Error deleting user: ' + err.message);
     }
   };
 
   const handleDeleteApplication = async (appId, name) => {
-    if (!window.confirm(`Are you sure you want to DELETE this application?\n\nApplicant: ${name}\n\nThis action cannot be undone!`)) return;
+    if (!window.confirm(`⚠️ PERMANENT DELETION WARNING ⚠️\n\nAre you sure you want to DELETE this application?\n\n📝 Applicant: ${name}\n\n🚨 This action cannot be undone!\n🚨 All application data will be permanently removed!`)) return;
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
-      const url = backendUrl ? `${backendUrl}/applications/${appId}` : `/applications/${appId}`;
+      const token = localStorage.getItem('token');
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
 
-      const res = await fetch(url, { method: 'DELETE' });
+      const res = await fetch(`${backendUrl}/api/applications/${appId}`, { 
+        method: 'DELETE',
+        headers: { 
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
       if (res.ok) {
-        alert('Application deleted successfully');
+        alert('✅ Application deleted successfully');
         loadApplications();
       } else {
-        throw new Error('Failed to delete application');
+        const error = await res.json();
+        alert(`❌ Error: ${error.message || 'Failed to delete application'}`);
       }
     } catch (err) {
-      alert('Error deleting application: ' + err.message);
+      console.error('Error deleting application:', err);
+      alert('❌ Error deleting application: ' + err.message);
     }
   };
 
@@ -752,57 +817,244 @@ ZgenAI Team`;
   };
 
   const renderUserManagement = () => {
+    const filteredUsers = users.filter(user => {
+      const matchesSearch = !searchQuery || 
+        user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.phone?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+      const matchesStatus = statusFilter === 'all' || (user.status || 'active') === statusFilter;
+      
+      return matchesSearch && matchesRole && matchesStatus;
+    });
+
     return (
       <div style={{padding: '0'}}>
-        {/* User Creation Button */}
-        <div style={{padding: '20px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc'}}>
-          <button
-            onClick={() => setShowUserModal(true)}
-            style={{
-              ...styles.btn('approve'),
-              fontSize: '14px',
-              fontWeight: '600'
-            }}
-          >
-            ➕ Create New User Account
-          </button>
+        {/* Corporate Admin Header */}
+        <div style={{
+          padding: '25px', 
+          background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)', 
+          color: 'white',
+          borderRadius: '12px 12px 0 0'
+        }}>
+          <h2 style={{margin: '0 0 10px 0', fontSize: '24px', fontWeight: '700'}}>
+            👥 Corporate User Management
+          </h2>
+          <p style={{margin: 0, opacity: 0.9, fontSize: '16px'}}>
+            Complete control over all platform users • Create • Block • Delete • Send Credentials
+          </p>
+        </div>
+
+        {/* Advanced Controls */}
+        <div style={{
+          padding: '20px',
+          backgroundColor: '#f8fafc',
+          borderBottom: '1px solid #e2e8f0',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '15px',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap'}}>
+            {/* Search Input */}
+            <input
+              type="text"
+              placeholder="🔍 Search users by name, email, or phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                padding: '10px 15px',
+                border: '2px solid #e2e8f0',
+                borderRadius: '8px',
+                fontSize: '14px',
+                minWidth: '280px',
+                outline: 'none'
+              }}
+            />
+            
+            {/* Role Filter */}
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              style={{
+                padding: '10px',
+                border: '2px solid #e2e8f0',
+                borderRadius: '6px',
+                fontSize: '14px'
+              }}
+            >
+              <option value="all">All Roles</option>
+              <option value="student">👨‍🎓 Students</option>
+              <option value="recruiter">💼 Recruiters</option>
+              <option value="trainer">🎓 Trainers</option>
+              <option value="admin">⚡ Admins</option>
+            </select>
+
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{
+                padding: '10px',
+                border: '2px solid #e2e8f0',
+                borderRadius: '6px',
+                fontSize: '14px'
+              }}
+            >
+              <option value="all">All Statuses</option>
+              <option value="active">✅ Active</option>
+              <option value="blocked">🚫 Blocked</option>
+            </select>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{display: 'flex', gap: '10px'}}>
+            <button
+              onClick={() => setShowUserModal(true)}
+              style={{
+                ...styles.btn('approve'),
+                fontSize: '14px',
+                fontWeight: '600',
+                padding: '12px 20px'
+              }}
+            >
+              ➕ Create New User
+            </button>
+            <div style={{
+              padding: '8px 12px',
+              backgroundColor: '#e3f2fd',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: '600',
+              color: '#1976d2'
+            }}>
+              📊 {filteredUsers.length} users found
+            </div>
+          </div>
         </div>
 
         {/* Users Table */}
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>User Details</th>
-              <th style={styles.th}>Contact</th>
-              <th style={styles.th}>Role</th>
-              <th style={styles.th}>Status</th>
-              <th style={styles.th}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(user => (
-              <tr key={user.id}>
-                <td style={styles.td}>
-                  <div style={{fontWeight: '600', marginBottom: '4px'}}>
-                    {user.full_name || 'No name provided'}
-                  </div>
-                  <div style={{fontSize: '12px', color: '#666'}}>
-                    ID: {user.id}
-                  </div>
-                </td>
-                <td style={styles.td}>
-                  <div style={{marginBottom: '4px'}}>{user.email}</div>
-                  <div style={{fontSize: '12px', color: '#666'}}>
-                    {user.phone || 'No phone provided'}
-                  </div>
-                </td>
-                <td style={styles.td}>
-                  <span style={{
-                    padding: '4px 8px',
-                    borderRadius: '12px',
-                    fontSize: '11px',
-                    fontWeight: '600',
-                    textTransform: 'uppercase',
+        <div style={{overflowX: 'auto'}}>
+          <table style={{...styles.table, minWidth: '100%'}}>
+            <thead>
+              <tr style={{backgroundColor: '#f1f5f9'}}>
+                <th style={{...styles.th, minWidth: '200px'}}>👤 User Details</th>
+                <th style={{...styles.th, minWidth: '200px'}}>📧 Contact Info</th>
+                <th style={{...styles.th, minWidth: '120px'}}>🎭 Role</th>
+                <th style={{...styles.th, minWidth: '100px'}}>📊 Status</th>
+                <th style={{...styles.th, minWidth: '320px'}}>⚡ Corporate Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.map(user => (
+                <tr key={user.id} style={{borderBottom: '1px solid #e2e8f0'}}>
+                  <td style={{...styles.td, padding: '16px'}}>
+                    <div style={{fontWeight: '700', marginBottom: '6px', fontSize: '16px', color: '#1f2937'}}>
+                      {user.full_name || 'No name provided'}
+                    </div>
+                    <div style={{fontSize: '12px', color: '#6b7280', backgroundColor: '#f3f4f6', padding: '2px 6px', borderRadius: '4px', display: 'inline-block'}}>
+                      ID: {user.id} • Created: {new Date(user.created_at).toLocaleDateString()}
+                    </div>
+                  </td>
+                  <td style={{...styles.td, padding: '16px'}}>
+                    <div style={{marginBottom: '6px', fontWeight: '600'}}>📧 {user.email}</div>
+                    <div style={{fontSize: '14px', color: '#6b7280'}}>
+                      📱 {user.phone || 'No phone provided'}
+                    </div>
+                  </td>
+                  <td style={{...styles.td, padding: '16px'}}>
+                    <span style={{
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      textTransform: 'uppercase',
+                      backgroundColor: 
+                        user.role === 'admin' ? '#fef3c7' :
+                        user.role === 'trainer' ? '#d1fae5' :
+                        user.role === 'recruiter' ? '#dbeafe' : '#f3e8ff',
+                      color:
+                        user.role === 'admin' ? '#92400e' :
+                        user.role === 'trainer' ? '#065f46' :
+                        user.role === 'recruiter' ? '#1e40af' : '#6b21a8'
+                    }}>
+                      {user.role === 'admin' ? '⚡ Admin' :
+                       user.role === 'trainer' ? '🎓 Trainer' :
+                       user.role === 'recruiter' ? '💼 Recruiter' : '👨‍🎓 Student'}
+                    </span>
+                  </td>
+                  <td style={{...styles.td, padding: '16px'}}>
+                    <span style={{
+                      ...styles.statusBadge(user.status || 'active'),
+                      fontWeight: '700',
+                      fontSize: '11px'
+                    }}>
+                      {(user.status || 'active') === 'active' ? '✅ ACTIVE' : '🚫 BLOCKED'}
+                    </span>
+                  </td>
+                  <td style={{...styles.td, padding: '16px'}}>
+                    <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
+                      <button
+                        onClick={() => handleBlockUser(user.id, user.status || 'active')}
+                        style={{
+                          ...styles.btn((user.status || 'active') === 'blocked' ? 'unblock' : 'block'),
+                          fontSize: '11px',
+                          padding: '6px 12px'
+                        }}
+                      >
+                        {(user.status || 'active') === 'blocked' ? '✅ Unblock' : '🚫 Block'}
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDeleteUser(user.id, user.email)}
+                        style={{
+                          ...styles.btn('delete'),
+                          fontSize: '11px',
+                          padding: '6px 12px'
+                        }}
+                      >
+                        🗑️ Delete
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          const subject = encodeURIComponent('ZgenAI Account Rating Request');
+                          const body = encodeURIComponent(`Dear ${user.full_name || user.email},\\n\\nWe would love to hear your feedback about your experience with ZgenAI platform!\\n\\nBest regards,\\nZgenAI Admin Team`);
+                          window.open(`mailto:${user.email}?subject=${subject}&body=${body}`, '_blank');
+                        }}
+                        style={{
+                          ...styles.btn('secondary'),
+                          fontSize: '11px',
+                          padding: '6px 12px'
+                        }}
+                      >
+                        📧 Email
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {filteredUsers.length === 0 && (
+          <div style={{
+            textAlign: 'center',
+            padding: '60px 20px',
+            color: '#6b7280',
+            fontSize: '18px'
+          }}>
+            <div style={{fontSize: '48px', marginBottom: '20px'}}>👥</div>
+            <div style={{fontWeight: '600', marginBottom: '10px'}}>No users found</div>
+            <div>Try adjusting your search criteria or create a new user</div>
+          </div>
+        )}
+      </div>
+    );
+  };
                     backgroundColor: user.role === 'admin' ? '#fef3c7' : 
                                    user.role === 'recruiter' ? '#dbeafe' :
                                    user.role === 'trainer' ? '#f3e8ff' : '#d1fae5',
@@ -1003,77 +1255,113 @@ ZgenAI Team`;
         </div>
       </div>
 
-      {/* USER CREATION MODAL */}
+      {/* ENHANCED USER CREATION MODAL */}
       {showUserModal && (
         <div style={styles.modal} onClick={() => setShowUserModal(false)}>
-          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <h2 style={styles.modalTitle}>Create New User Account</h2>
-            <p style={styles.modalSubtitle}>Add a new user to the ZgenAI platform</p>
+          <div style={{...styles.modalContent, maxWidth: '600px'}} onClick={(e) => e.stopPropagation()}>
+            <div style={{
+              background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)',
+              color: 'white',
+              padding: '25px',
+              margin: '-30px -30px 25px -30px',
+              borderRadius: '15px 15px 0 0'
+            }}>
+              <h2 style={{...styles.modalTitle, color: 'white', margin: '0 0 10px 0'}}>
+                🚀 Create New User Account
+              </h2>
+              <p style={{...styles.modalSubtitle, color: 'rgba(255,255,255,0.9)', margin: 0}}>
+                Corporate Admin • Full Platform Access Control
+              </p>
+            </div>
             
             <div style={styles.inputGroup}>
-              <label style={styles.label}>Full Name *</label>
+              <label style={styles.label}>👤 Full Name *</label>
               <input 
                 type="text"
                 value={userForm.name}
                 onChange={e => setUserForm({...userForm, name: e.target.value})}
                 placeholder="Enter full name"
-                style={styles.input}
+                style={{...styles.input, fontSize: '16px', padding: '15px'}}
               />
             </div>
 
             <div style={styles.inputGroup}>
-              <label style={styles.label}>Email Address *</label>
+              <label style={styles.label}>📧 Email Address *</label>
               <input 
                 type="email"
                 value={userForm.email}
                 onChange={e => setUserForm({...userForm, email: e.target.value})}
                 placeholder="Enter email address"
-                style={styles.input}
+                style={{...styles.input, fontSize: '16px', padding: '15px'}}
               />
             </div>
 
             <div style={styles.inputGroup}>
-              <label style={styles.label}>Phone Number</label>
+              <label style={styles.label}>📱 Phone Number</label>
               <input 
                 type="text"
                 value={userForm.phone}
                 onChange={e => setUserForm({...userForm, phone: e.target.value})}
                 placeholder="Enter phone number (optional)"
-                style={styles.input}
+                style={{...styles.input, fontSize: '16px', padding: '15px'}}
               />
             </div>
 
             <div style={styles.inputGroup}>
-              <label style={styles.label}>User Role *</label>
+              <label style={styles.label}>🎭 User Role *</label>
               <select 
                 value={userForm.role}
                 onChange={e => setUserForm({...userForm, role: e.target.value})}
-                style={styles.input}
+                style={{...styles.input, fontSize: '16px', padding: '15px'}}
               >
-                <option value="student">👨‍🎓 Student</option>
-                <option value="recruiter">💼 Recruiter</option>
-                <option value="trainer">🎓 Trainer</option>
-                <option value="admin">⚡ Admin</option>
+                <option value="student">👨‍🎓 Student - Access to courses and applications</option>
+                <option value="recruiter">💼 Recruiter - View and manage applications</option>
+                <option value="trainer">🎓 Trainer - Manage approved students and training</option>
+                <option value="admin">⚡ Admin - Full corporate control access</option>
               </select>
             </div>
 
-            <small style={{fontSize: '12px', color: '#718096', marginBottom: '20px', display: 'block'}}>
-              Default password: "password123" - User will be prompted to change on first login
-            </small>
+            <div style={{
+              background: '#f8f9fa',
+              padding: '20px',
+              borderRadius: '10px',
+              border: '1px solid #e9ecef',
+              marginBottom: '25px'
+            }}>
+              <h4 style={{margin: '0 0 10px 0', color: '#495057', fontSize: '14px', fontWeight: '700'}}>
+                🔐 Account Setup Details:
+              </h4>
+              <ul style={{margin: '0', paddingLeft: '20px', fontSize: '13px', color: '#6c757d', lineHeight: '1.6'}}>
+                <li><strong>Default Password:</strong> "password123" (user will change on first login)</li>
+                <li><strong>Welcome Email:</strong> Sent automatically with login credentials</li>
+                <li><strong>Dashboard Access:</strong> {userForm.role} dashboard will be available immediately</li>
+                <li><strong>Account Status:</strong> Active (ready to use)</li>
+              </ul>
+            </div>
 
             <div style={styles.modalActions}>
               <button 
                 onClick={handleCreateUser}
-                style={{...styles.btn('approve'), flex: 1, padding: '12px'}}
+                style={{
+                  ...styles.btn('approve'), 
+                  flex: 1, 
+                  padding: '15px',
+                  fontSize: '16px',
+                  fontWeight: '700'
+                }}
+                disabled={!userForm.name || !userForm.email || !userForm.role}
               >
-                ➕ Create User Account
+                {!userForm.name || !userForm.email || !userForm.role ? 
+                  '⚠️ Fill Required Fields' : 
+                  '🚀 Create Account & Send Email'
+                }
               </button>
               <button 
                 onClick={() => {
                   setShowUserModal(false);
                   setUserForm({ name: '', email: '', phone: '', role: 'student' });
                 }}
-                style={{...styles.btn('secondary'), flex: 1, padding: '12px'}}
+                style={{...styles.btn('secondary'), flex: 1, padding: '15px', fontSize: '16px'}}
               >
                 Cancel
               </button>
