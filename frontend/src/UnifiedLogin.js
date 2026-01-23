@@ -39,6 +39,9 @@ export default function UnifiedLogin() {
           case 'recruiter':
             navigate('/recruiter-dashboard');
             break;
+          case 'trainer':
+            navigate('/trainer-dashboard');
+            break;
           case 'admin':
             navigate('/admin');
             break;
@@ -158,7 +161,7 @@ export default function UnifiedLogin() {
     },
     roleGrid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)',
+      gridTemplateColumns: 'repeat(2, 1fr)',
       gap: '12px',
       marginTop: '8px'
     },
@@ -230,7 +233,7 @@ export default function UnifiedLogin() {
 
           <div style={styles.inputGroup}>
             <label style={styles.label}>Access Role</label>
-            <div style={styles.roleGrid}>
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginTop: '8px'}}>
               <div
                 style={styles.roleOption(role === 'student')}
                 onClick={() => !loading && setRole('student')}
@@ -242,6 +245,12 @@ export default function UnifiedLogin() {
                 onClick={() => !loading && setRole('recruiter')}
               >
                 💼 Recruiter
+              </div>
+              <div
+                style={styles.roleOption(role === 'trainer')}
+                onClick={() => !loading && setRole('trainer')}
+              >
+                🎓 Trainer
               </div>
               <div
                 style={styles.roleOption(role === 'admin')}

@@ -2,12 +2,36 @@ import React, { useState, useEffect } from 'react';
 
 export default function AdminDashboard() {
   const [applications, setApplications] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedApp, setSelectedApp] = useState(null);
   const [password, setPassword] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState('pending');
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [userForm, setUserForm] = useState({ name: '', email: '', phone: '', role: 'student' });
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  useEffect(() => {
+    loadApplications();
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const url = backendUrl ? `${backendUrl}/users` : '/users';
+      
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data);
+      }
+    } catch (err) {
+      console.error('Error loading users:', err);
+    }
+  };
 
   useEffect(() => {
     loadApplications();
@@ -103,6 +127,125 @@ export default function AdminDashboard() {
     } catch (err) {
       alert('Error: ' + err.message);
     }
+  };
+
+  // User Management Functions
+  const handleCreateUser = async () => {
+    if (!userForm.name || !userForm.email) {
+      alert('Name and email are required');
+      return;
+    }
+
+    try {
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const url = backendUrl ? `${backendUrl}/users` : '/users';
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: userForm.name,
+          email: userForm.email,
+          phone: userForm.phone,
+          role: userForm.role,
+          password: 'password123' // Default password
+        })
+      });
+
+      if (res.ok) {
+        alert(`User created successfully!\nEmail: ${userForm.email}\nPassword: password123\nRole: ${userForm.role}`);
+        setShowUserModal(false);
+        setUserForm({ name: '', email: '', phone: '', role: 'student' });
+        loadUsers();
+      } else {
+        throw new Error('Failed to create user');
+      }
+    } catch (err) {
+      alert('Error creating user: ' + err.message);
+    }
+  };
+
+  const handleBlockUser = async (userId, currentStatus) => {
+    const action = currentStatus === 'blocked' ? 'unblock' : 'block';
+    if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
+
+    try {
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const url = backendUrl ? `${backendUrl}/users/${userId}/${action}` : `/users/${userId}/${action}`;
+
+      const res = await fetch(url, { method: 'POST' });
+      if (res.ok) {
+        alert(`User ${action}ed successfully`);
+        loadUsers();
+      } else {
+        throw new Error(`Failed to ${action} user`);
+      }
+    } catch (err) {
+      alert(`Error: ${err.message}`);
+    }
+  };
+
+  const handleDeleteUser = async (userId, email) => {
+    if (!window.confirm(`Are you sure you want to DELETE this user account?\n\nEmail: ${email}\n\nThis action cannot be undone!`)) return;
+
+    try {
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const url = backendUrl ? `${backendUrl}/users/${userId}` : `/users/${userId}`;
+
+      const res = await fetch(url, { method: 'DELETE' });
+      if (res.ok) {
+        alert('User deleted successfully');
+        loadUsers();
+      } else {
+        throw new Error('Failed to delete user');
+      }
+    } catch (err) {
+      alert('Error deleting user: ' + err.message);
+    }
+  };
+
+  const handleDeleteApplication = async (appId, name) => {
+    if (!window.confirm(`Are you sure you want to DELETE this application?\n\nApplicant: ${name}\n\nThis action cannot be undone!`)) return;
+
+    try {
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const url = backendUrl ? `${backendUrl}/applications/${appId}` : `/applications/${appId}`;
+
+      const res = await fetch(url, { method: 'DELETE' });
+      if (res.ok) {
+        alert('Application deleted successfully');
+        loadApplications();
+      } else {
+        throw new Error('Failed to delete application');
+      }
+    } catch (err) {
+      alert('Error deleting application: ' + err.message);
+    }
+  };
+
+  const handleSendRatingEmail = (user) => {
+    const subject = `ZgenAI Account Rating & Feedback Request`;
+    const body = `Dear ${user.full_name || user.email},
+
+We hope you're having a great experience with ZgenAI platform!
+
+Account Details:
+- Name: ${user.full_name || 'Not provided'}
+- Email: ${user.email}
+- Phone: ${user.phone || 'Not provided'}
+- Role: ${user.role}
+
+We would love to get your feedback and rating on our platform. Please reply to this email with:
+1. Your overall rating (1-5 stars)
+2. What you like most about the platform
+3. Any suggestions for improvement
+
+Your feedback helps us serve you better!
+
+Best regards,
+ZgenAI Team`;
+
+    window.location.href = `mailto:${user.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   const styles = {
@@ -249,6 +392,21 @@ export default function AdminDashboard() {
           background: 'linear-gradient(135deg, #4b5563 0%, #374151 100%)',
           hover: 'linear-gradient(135deg, #374151 0%, #1f2937 100%)',
           shadow: 'rgba(75, 85, 99, 0.2)'
+        },
+        block: {
+          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+          hover: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+          shadow: 'rgba(245, 158, 11, 0.2)'
+        },
+        unblock: {
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          hover: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+          shadow: 'rgba(16, 185, 129, 0.2)'
+        },
+        delete: {
+          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+          hover: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+          shadow: 'rgba(239, 68, 68, 0.2)'
         }
       };
       const v = variants[variant] || variants.secondary;
@@ -268,6 +426,92 @@ export default function AdminDashboard() {
           boxShadow: `0 4px 12px ${v.shadow}`
         }
       };
+    },
+    searchContainer: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginBottom: '20px',
+      gap: '10px',
+      alignItems: 'center',
+      flexWrap: 'wrap'
+    },
+    searchInput: {
+      padding: '12px 16px',
+      border: '2px solid #e2e8f0',
+      borderRadius: '8px',
+      fontSize: '16px',
+      minWidth: '300px',
+      boxSizing: 'border-box',
+      transition: 'border-color 0.2s ease'
+    },
+    actionButton: {
+      backgroundColor: '#4299E1',
+      color: 'white',
+      padding: '12px 24px',
+      border: 'none',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      fontSize: '16px',
+      fontWeight: '600',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      transition: 'all 0.2s ease'
+    },
+    filterContainer: {
+      display: 'flex',
+      gap: '10px',
+      alignItems: 'center',
+    },
+    select: {
+      padding: '8px 12px',
+      border: '2px solid #e2e8f0',
+      borderRadius: '6px',
+      fontSize: '14px',
+      backgroundColor: 'white'
+    },
+    statusBadge: (status) => ({
+      padding: '4px 12px',
+      borderRadius: '20px',
+      fontSize: '12px',
+      fontWeight: '600',
+      textAlign: 'center',
+      backgroundColor: 
+        status === 'active' ? '#C6F6D5' :
+        status === 'blocked' ? '#FED7D7' :
+        status === 'pending' ? '#FEFCBF' :
+        status === 'approved' ? '#C6F6D5' :
+        status === 'rejected' ? '#FED7D7' : '#E2E8F0',
+      color:
+        status === 'active' ? '#22543D' :
+        status === 'blocked' ? '#742A2A' :
+        status === 'pending' ? '#744210' :
+        status === 'approved' ? '#22543D' :
+        status === 'rejected' ? '#742A2A' : '#4A5568',
+    }),
+    userTable: {
+      width: '100%',
+      borderCollapse: 'collapse',
+      marginTop: '20px',
+      backgroundColor: 'white',
+      borderRadius: '8px',
+      overflow: 'hidden',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+    },
+    th: {
+      padding: '16px 12px',
+      textAlign: 'left',
+      borderBottom: '2px solid #e2e8f0',
+      fontWeight: '700',
+      color: '#2D3748',
+      backgroundColor: '#f8fafc',
+      fontSize: '14px'
+    },
+    td: {
+      padding: '16px 12px',
+      borderBottom: '1px solid #e2e8f0',
+      color: '#4A5568',
+      fontSize: '14px'
     },
     emptyState: {
       padding: '60px 20px',
@@ -475,17 +719,149 @@ export default function AdminDashboard() {
                   >
                     Reject
                   </button>
+                  <button 
+                    onClick={() => handleDeleteApplication(app.id, app.full_name)}
+                    style={styles.btn('reject')}
+                    title="Delete Application"
+                  >
+                    🗑️ Delete
+                  </button>
                 </td>
               )}
-              {type === 'approved' && (
-                <td style={styles.td}>
-                  {app.approved_date ? new Date(app.approved_date).toLocaleDateString() : 'N/A'}
+              {(type === 'approved' || type === 'rejected') && (
+                <td style={{...styles.td, ...styles.actionCell}}>
+                  {type === 'approved' && app.approved_date && (
+                    <span style={{marginRight: '10px', fontSize: '13px', color: '#666'}}>
+                      {new Date(app.approved_date).toLocaleDateString()}
+                    </span>
+                  )}
+                  <button 
+                    onClick={() => handleDeleteApplication(app.id, app.full_name)}
+                    style={styles.btn('reject')}
+                    title="Delete Application"
+                  >
+                    🗑️ Delete
+                  </button>
                 </td>
               )}
             </tr>
           ))}
         </tbody>
       </table>
+    );
+  };
+
+  const renderUserManagement = () => {
+    return (
+      <div style={{padding: '0'}}>
+        {/* User Creation Button */}
+        <div style={{padding: '20px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc'}}>
+          <button
+            onClick={() => setShowUserModal(true)}
+            style={{
+              ...styles.btn('approve'),
+              fontSize: '14px',
+              fontWeight: '600'
+            }}
+          >
+            ➕ Create New User Account
+          </button>
+        </div>
+
+        {/* Users Table */}
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th style={styles.th}>User Details</th>
+              <th style={styles.th}>Contact</th>
+              <th style={styles.th}>Role</th>
+              <th style={styles.th}>Status</th>
+              <th style={styles.th}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map(user => (
+              <tr key={user.id}>
+                <td style={styles.td}>
+                  <div style={{fontWeight: '600', marginBottom: '4px'}}>
+                    {user.full_name || 'No name provided'}
+                  </div>
+                  <div style={{fontSize: '12px', color: '#666'}}>
+                    ID: {user.id}
+                  </div>
+                </td>
+                <td style={styles.td}>
+                  <div style={{marginBottom: '4px'}}>{user.email}</div>
+                  <div style={{fontSize: '12px', color: '#666'}}>
+                    {user.phone || 'No phone provided'}
+                  </div>
+                </td>
+                <td style={styles.td}>
+                  <span style={{
+                    padding: '4px 8px',
+                    borderRadius: '12px',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    backgroundColor: user.role === 'admin' ? '#fef3c7' : 
+                                   user.role === 'recruiter' ? '#dbeafe' :
+                                   user.role === 'trainer' ? '#f3e8ff' : '#d1fae5',
+                    color: user.role === 'admin' ? '#92400e' : 
+                           user.role === 'recruiter' ? '#1e40af' :
+                           user.role === 'trainer' ? '#7c3aed' : '#166534'
+                  }}>
+                    {user.role}
+                  </span>
+                </td>
+                <td style={styles.td}>
+                  <span style={{
+                    padding: '4px 8px',
+                    borderRadius: '12px',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    backgroundColor: user.status === 'blocked' ? '#fee2e2' : '#d1fae5',
+                    color: user.status === 'blocked' ? '#dc2626' : '#166534'
+                  }}>
+                    {user.status === 'blocked' ? '🚫 Blocked' : '✅ Active'}
+                  </span>
+                </td>
+                <td style={{...styles.td, ...styles.actionCell}}>
+                  <button
+                    onClick={() => handleSendRatingEmail(user)}
+                    style={{...styles.btn('secondary'), fontSize: '12px', padding: '6px 12px'}}
+                    title="Send rating email"
+                  >
+                    ⭐ Rate
+                  </button>
+                  <button
+                    onClick={() => handleBlockUser(user.id, user.status)}
+                    style={{
+                      ...styles.btn(user.status === 'blocked' ? 'approve' : 'reject'), 
+                      fontSize: '12px', 
+                      padding: '6px 12px'
+                    }}
+                  >
+                    {user.status === 'blocked' ? '🔓 Unblock' : '🚫 Block'}
+                  </button>
+                  <button
+                    onClick={() => handleDeleteUser(user.id, user.email)}
+                    style={{...styles.btn('reject'), fontSize: '12px', padding: '6px 12px'}}
+                    title="Delete user account"
+                  >
+                    🗑️ Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {users.length === 0 && (
+          <div style={{padding: '40px', textAlign: 'center', color: '#666'}}>
+            No users found. Create your first user account above.
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -561,13 +937,20 @@ export default function AdminDashboard() {
               >
                 Rejected ({rejected.length})
               </button>
+              <button 
+                style={styles.tab(activeTab === 'users')}
+                onClick={() => setActiveTab('users')}
+              >
+                User Management ({users.length})
+              </button>
             </div>
 
             {/* TAB CONTENT */}
-            <div style={{padding: activeTab === 'pending' ? 0 : 0}}>
+            <div style={{padding: 0}}>
               {activeTab === 'pending' && renderApplicationsTable(pending, 'pending')}
               {activeTab === 'approved' && renderApplicationsTable(approved, 'approved')}
               {activeTab === 'rejected' && renderApplicationsTable(rejected, 'rejected')}
+              {activeTab === 'users' && renderUserManagement()}
             </div>
           </div>
         )}
@@ -619,6 +1002,85 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* USER CREATION MODAL */}
+      {showUserModal && (
+        <div style={styles.modal} onClick={() => setShowUserModal(false)}>
+          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h2 style={styles.modalTitle}>Create New User Account</h2>
+            <p style={styles.modalSubtitle}>Add a new user to the ZgenAI platform</p>
+            
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Full Name *</label>
+              <input 
+                type="text"
+                value={userForm.name}
+                onChange={e => setUserForm({...userForm, name: e.target.value})}
+                placeholder="Enter full name"
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Email Address *</label>
+              <input 
+                type="email"
+                value={userForm.email}
+                onChange={e => setUserForm({...userForm, email: e.target.value})}
+                placeholder="Enter email address"
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Phone Number</label>
+              <input 
+                type="text"
+                value={userForm.phone}
+                onChange={e => setUserForm({...userForm, phone: e.target.value})}
+                placeholder="Enter phone number (optional)"
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>User Role *</label>
+              <select 
+                value={userForm.role}
+                onChange={e => setUserForm({...userForm, role: e.target.value})}
+                style={styles.input}
+              >
+                <option value="student">👨‍🎓 Student</option>
+                <option value="recruiter">💼 Recruiter</option>
+                <option value="trainer">🎓 Trainer</option>
+                <option value="admin">⚡ Admin</option>
+              </select>
+            </div>
+
+            <small style={{fontSize: '12px', color: '#718096', marginBottom: '20px', display: 'block'}}>
+              Default password: "password123" - User will be prompted to change on first login
+            </small>
+
+            <div style={styles.modalActions}>
+              <button 
+                onClick={handleCreateUser}
+                style={{...styles.btn('approve'), flex: 1, padding: '12px'}}
+              >
+                ➕ Create User Account
+              </button>
+              <button 
+                onClick={() => {
+                  setShowUserModal(false);
+                  setUserForm({ name: '', email: '', phone: '', role: 'student' });
+                }}
+                style={{...styles.btn('secondary'), flex: 1, padding: '12px'}}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

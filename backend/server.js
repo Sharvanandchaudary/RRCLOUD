@@ -1077,6 +1077,226 @@ app.post('/auth/change-password', verifyToken, async (req, res) => {
   }
 });
 
+/* -------------------- USER MANAGEMENT ENDPOINTS -------------------- */
+
+// Get all users (Admin only)
+app.get('/api/users', verifyToken, async (req, res) => {
+  try {
+    // Check if user is admin
+    const userRole = req.user?.role;
+    if (userRole !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const result = await db.query(`
+      SELECT id, email, full_name, role, 
+             COALESCE(status, 'active') as status,
+             phone, created_at
+      FROM users 
+      ORDER BY created_at DESC
+    `);
+
+    res.json({ users: result.rows });
+  } catch (err) {
+    console.error('/api/users error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Create new user (Admin only)
+app.post('/api/users', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    if (userRole !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { name, email, phone, role } = req.body;
+    if (!name || !email || !role) {
+      return res.status(400).json({ error: 'Name, email, and role are required' });
+    }
+
+    // Check if user already exists
+    const existing = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existing.rowCount > 0) {
+      return res.status(400).json({ error: 'User with this email already exists' });
+    }
+
+    // Create user with default password
+    const defaultPassword = 'password123';
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+    const result = await db.query(
+      `INSERT INTO users (email, password_hash, full_name, role, phone, status) 
+       VALUES ($1, $2, $3, $4, $5, 'active') RETURNING *`,
+      [email, hashedPassword, name, role, phone || null]
+    );
+
+    res.json({ 
+      message: 'User created successfully',
+      user: result.rows[0] 
+    });
+  } catch (err) {
+    console.error('/api/users POST error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Block/Unblock user (Admin only)
+app.put('/api/users/:id/block', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    if (userRole !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    const { blocked } = req.body;
+
+    const status = blocked ? 'blocked' : 'active';
+    
+    const result = await db.query(
+      'UPDATE users SET status = $1 WHERE id = $2 RETURNING *',
+      [status, id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ 
+      message: `User ${blocked ? 'blocked' : 'unblocked'} successfully`,
+      user: result.rows[0] 
+    });
+  } catch (err) {
+    console.error('/api/users/:id/block error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete user (Admin only)
+app.delete('/api/users/:id', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    if (userRole !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    
+    // Prevent admin from deleting themselves
+    if (parseInt(id) === req.user.id) {
+      return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+
+    const result = await db.query(
+      'DELETE FROM users WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ 
+      message: 'User deleted successfully',
+      user: result.rows[0] 
+    });
+  } catch (err) {
+    console.error('/api/users/:id DELETE error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Send rating email (Admin only)
+app.post('/api/users/send-rating-email', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    if (userRole !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { userIds, message } = req.body;
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ error: 'User IDs array is required' });
+    }
+
+    // Get users to email
+    const placeholders = userIds.map((_, i) => `$${i + 1}`).join(',');
+    const users = await db.query(
+      `SELECT email, full_name, phone FROM users WHERE id IN (${placeholders})`,
+      userIds
+    );
+
+    if (users.rowCount === 0) {
+      return res.status(404).json({ error: 'No users found' });
+    }
+
+    // Send emails
+    const emailPromises = users.rows.map(user => {
+      const mailOptions = {
+        from: process.env.SMTP_USER || 'admin@zgenai.org',
+        to: user.email,
+        subject: 'ZgenAI - Account Rating Request',
+        html: `
+          <h2>Dear ${user.full_name},</h2>
+          <p>We hope this email finds you well.</p>
+          <p>${message || 'We would like to request you to rate your experience with our platform.'}</p>
+          <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+            <p><strong>Your Details:</strong></p>
+            <p>Name: ${user.full_name}</p>
+            <p>Email: ${user.email}</p>
+            <p>Phone: ${user.phone || 'Not provided'}</p>
+          </div>
+          <p>Please take a moment to provide your feedback.</p>
+          <p>Best regards,<br>ZgenAI Team</p>
+        `
+      };
+
+      return transporter.sendMail(mailOptions);
+    });
+
+    await Promise.all(emailPromises);
+
+    res.json({ 
+      message: `Rating emails sent successfully to ${users.rowCount} users`,
+      recipients: users.rows.length 
+    });
+  } catch (err) {
+    console.error('/api/users/send-rating-email error:', err);
+    res.status(500).json({ error: 'Failed to send emails' });
+  }
+});
+
+// Delete application (Admin only)
+app.delete('/api/applications/:id', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    if (userRole !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    
+    const result = await db.query(
+      'DELETE FROM applications WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    res.json({ 
+      message: 'Application deleted successfully',
+      application: result.rows[0] 
+    });
+  } catch (err) {
+    console.error('/api/applications/:id DELETE error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 /* -------------------- HEALTH CHECK -------------------- */
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -1137,7 +1357,9 @@ const initDB = async () => {
         email VARCHAR(255) UNIQUE NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
         full_name VARCHAR(255),
+        phone VARCHAR(50),
         role VARCHAR(50) DEFAULT 'student',
+        status VARCHAR(50) DEFAULT 'active',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
