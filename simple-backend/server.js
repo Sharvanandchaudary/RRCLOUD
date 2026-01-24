@@ -1,9 +1,26 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+
+// Configure multer for file uploads
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['.csv', '.xlsx', '.xls'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowedTypes.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only CSV and Excel files are allowed.'));
+    }
+  }
+});
 
 app.use(cors());
 app.use(express.json());
@@ -114,6 +131,125 @@ const mockApplications = [
     created_at: '2024-01-23T10:30:00Z'
   }
 ];
+
+// Mock task data for student dashboard
+let studentTasks = [
+  {
+    id: 1,
+    title: 'Complete React Tutorial',
+    description: 'Finish the advanced React concepts tutorial',
+    type: 'daily',
+    assignedBy: 'Dr. Smith',
+    priority: 'high',
+    completed: false,
+    createdAt: '2024-01-15T10:00:00Z',
+    dueDate: '2024-01-16T18:00:00Z'
+  },
+  {
+    id: 2,
+    title: 'Algorithm Practice',
+    description: 'Solve 5 medium-level algorithms on LeetCode',
+    type: 'assignment',
+    assignedBy: 'Prof. Johnson',
+    priority: 'medium',
+    completed: true,
+    createdAt: '2024-01-14T09:00:00Z',
+    completedAt: '2024-01-15T14:30:00Z',
+    grade: 85
+  },
+  {
+    id: 3,
+    title: 'Project Planning',
+    description: 'Create detailed project timeline and deliverables',
+    type: 'project',
+    assignedBy: 'Dr. Wilson',
+    priority: 'high',
+    completed: false,
+    createdAt: '2024-01-13T11:00:00Z',
+    dueDate: '2024-01-18T17:00:00Z'
+  },
+  {
+    id: 4,
+    title: 'Database Design',
+    description: 'Design normalized database schema for e-commerce',
+    type: 'assignment',
+    assignedBy: 'Prof. Davis',
+    priority: 'medium',
+    completed: true,
+    createdAt: '2024-01-12T08:00:00Z',
+    completedAt: '2024-01-14T16:45:00Z',
+    grade: 92
+  },
+  {
+    id: 5,
+    title: 'Code Review',
+    description: 'Review and provide feedback on peer submissions',
+    type: 'daily',
+    assignedBy: 'Dr. Brown',
+    priority: 'low',
+    completed: false,
+    createdAt: '2024-01-15T13:00:00Z',
+    dueDate: '2024-01-16T12:00:00Z'
+  }
+];
+
+// Mock company data for visualization
+const companyData = [
+  {
+    name: 'TechCorp Solutions',
+    location: 'San Francisco, CA',
+    applications: 45,
+    matchRate: 78,
+    recruiterEmail: 'hr@techcorp.com',
+    studentMatches: 12
+  },
+  {
+    name: 'Innovation Labs',
+    location: 'Austin, TX',
+    applications: 32,
+    matchRate: 85,
+    recruiterEmail: 'careers@innovationlabs.com',
+    studentMatches: 8
+  },
+  {
+    name: 'DataFlow Systems',
+    location: 'Seattle, WA',
+    applications: 28,
+    matchRate: 72,
+    recruiterEmail: 'jobs@dataflow.com',
+    studentMatches: 15
+  },
+  {
+    name: 'CloudFirst Technologies',
+    location: 'New York, NY',
+    applications: 38,
+    matchRate: 81,
+    recruiterEmail: 'talent@cloudfirst.com',
+    studentMatches: 9
+  },
+  {
+    name: 'AI Dynamics',
+    location: 'Boston, MA',
+    applications: 25,
+    matchRate: 89,
+    recruiterEmail: 'recruitment@aidynamics.com',
+    studentMatches: 6
+  }
+];
+
+// Mock analytics data
+let analyticsData = {
+  totalApplications: 8,
+  completedTasks: studentTasks.filter(t => t.completed).length,
+  pendingTasks: studentTasks.filter(t => !t.completed).length,
+  companyData: companyData,
+  weeklyProgress: [65, 78, 82, 91, 87],
+  skillDevelopment: 78,
+  courseProgress: 65
+};
+
+// CSV data storage for demonstration
+let csvDataStore = [];
 
 // Health check
 app.get('/health', (req, res) => {
@@ -264,6 +400,187 @@ app.put('/api/users/:id/block', (req, res) => {
   
   user.status = blocked ? 'blocked' : 'active';
   res.json({ message: `User ${blocked ? 'blocked' : 'unblocked'} successfully`, user });
+});
+
+// Student authentication endpoint
+app.post('/auth/student', (req, res) => {
+  const { email, password } = req.body;
+  // For demo, accept any student@example.com with password123
+  if (email === 'student@example.com' && password === 'password123') {
+    res.json({ 
+      token: 'mock-student-token', 
+      user: { email, role: 'student', full_name: 'Student User' },
+      message: 'Login successful' 
+    });
+  } else {
+    res.status(401).json({ error: 'Invalid credentials' });
+  }
+});
+
+// Get current user profile
+app.get('/auth/me', (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ error: 'No authorization header' });
+  }
+  
+  const token = authHeader.split(' ')[1];
+  if (token === 'mock-admin-token') {
+    res.json({ 
+      user: { 
+        email: 'admin@zgenai.com', 
+        role: 'admin', 
+        full_name: 'Admin User' 
+      }
+    });
+  } else if (token === 'mock-student-token') {
+    res.json({ 
+      user: { 
+        email: 'student@example.com', 
+        role: 'student', 
+        full_name: 'Student User' 
+      }
+    });
+  } else {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// Get student tasks
+app.get('/api/student/tasks', (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.includes('mock-student-token') && !authHeader.includes('mock-admin-token')) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const tasks = studentTasks.filter(t => !t.completed);
+  const dailyTasks = studentTasks.filter(t => t.type === 'daily' && !t.completed);
+  const history = studentTasks.filter(t => t.completed);
+
+  res.json({ 
+    tasks, 
+    dailyTasks, 
+    history,
+    total: studentTasks.length 
+  });
+});
+
+// Submit new task
+app.post('/api/student/tasks', (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.includes('mock-student-token') && !authHeader.includes('mock-admin-token')) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const { title, description, type } = req.body;
+  const newTask = {
+    id: studentTasks.length + 1,
+    title,
+    description,
+    type,
+    assignedBy: 'Self Submitted',
+    priority: 'medium',
+    completed: false,
+    createdAt: new Date().toISOString(),
+    submittedBy: 'student'
+  };
+
+  studentTasks.push(newTask);
+  
+  // Update analytics
+  analyticsData.pendingTasks = studentTasks.filter(t => !t.completed).length;
+  
+  res.json({ message: 'Task submitted successfully', task: newTask });
+});
+
+// Complete task
+app.put('/api/student/tasks/:id/complete', (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.includes('mock-student-token') && !authHeader.includes('mock-admin-token')) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const taskId = parseInt(req.params.id);
+  const task = studentTasks.find(t => t.id === taskId);
+  
+  if (!task) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+
+  task.completed = true;
+  task.completedAt = new Date().toISOString();
+  task.grade = Math.floor(Math.random() * 30) + 70; // Random grade 70-100
+  
+  // Update analytics
+  analyticsData.completedTasks = studentTasks.filter(t => t.completed).length;
+  analyticsData.pendingTasks = studentTasks.filter(t => !t.completed).length;
+  
+  res.json({ message: 'Task completed successfully', task });
+});
+
+// Get student analytics
+app.get('/api/student/analytics', (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.includes('mock-student-token') && !authHeader.includes('mock-admin-token')) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  // Update analytics with current data
+  analyticsData.completedTasks = studentTasks.filter(t => t.completed).length;
+  analyticsData.pendingTasks = studentTasks.filter(t => !t.completed).length;
+  
+  res.json(analyticsData);
+});
+
+// Upload CSV data with file handling
+app.post('/api/student/upload-data', upload.single('file'), (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.includes('mock-student-token') && !authHeader.includes('mock-admin-token')) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+
+  // For demo, simulate CSV data processing
+  const mockCsvData = [
+    { company: 'TechCorp Solutions', position: 'Full Stack Developer', applied_date: '2024-01-15', status: 'Pending', match_score: 85 },
+    { company: 'Innovation Labs', position: 'Data Analyst', applied_date: '2024-01-14', status: 'Interview', match_score: 92 },
+    { company: 'AI Dynamics', position: 'ML Engineer', applied_date: '2024-01-13', status: 'Rejected', match_score: 78 },
+    { company: 'CloudFirst Technologies', position: 'DevOps Engineer', applied_date: '2024-01-12', status: 'Approved', match_score: 88 },
+    { company: 'DataFlow Systems', position: 'Backend Developer', applied_date: '2024-01-11', status: 'Pending', match_score: 81 },
+    { company: 'TechCorp Solutions', position: 'Frontend Developer', applied_date: '2024-01-10', status: 'Interview', match_score: 87 }
+  ];
+  
+  csvDataStore = mockCsvData;
+  
+  // Update company data with new matches
+  companyData.forEach(company => {
+    const matches = mockCsvData.filter(row => row.company.includes(company.name.split(' ')[0]));
+    company.studentMatches = matches.length;
+    company.applications += matches.length;
+  });
+  
+  res.json({ 
+    message: 'Data uploaded and processed successfully', 
+    data: csvDataStore,
+    processed: csvDataStore.length,
+    filename: req.file.originalname,
+    filesize: req.file.size
+  });
+});
+
+// Get application by email (for student profile)
+app.get('/api/applications/:email', (req, res) => {
+  const email = req.params.email;
+  const application = mockApplications.find(app => app.email === email);
+  
+  if (!application) {
+    return res.status(404).json({ error: 'Application not found' });
+  }
+  
+  res.json(application);
 });
 
 // Serve frontend for all other routes

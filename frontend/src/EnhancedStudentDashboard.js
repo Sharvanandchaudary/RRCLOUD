@@ -166,7 +166,6 @@ function StudentDashboard() {
 
       if (response.ok) {
         fetchTasks();
-        fetchVisualizationData();
         alert('✅ Task completed!');
       }
     } catch (error) {
@@ -194,11 +193,10 @@ function StudentDashboard() {
         const data = await response.json();
         setCsvData(data.data || []);
         fetchVisualizationData();
-        alert(`✅ Data uploaded successfully! Processed ${data.processed} records from ${data.filename}.`);
+        alert('✅ Data uploaded successfully!');
       }
     } catch (error) {
       console.error('Error uploading file:', error);
-      alert('❌ Error uploading file. Please try again.');
     }
   };
 
@@ -232,7 +230,7 @@ function StudentDashboard() {
           </div>
           <div style={styles.headerActions}>
             <div style={styles.userInfo}>
-              <span style={styles.welcomeText}>Welcome, {user?.full_name || 'Student'}!</span>
+              <span style={styles.welcomeText}>Welcome, {user?.full_name}!</span>
               <span style={styles.roleText}>Student Dashboard</span>
             </div>
             <button 
@@ -286,14 +284,14 @@ function StudentDashboard() {
           <div style={styles.statCard}>
             <div style={styles.statIcon}>🎯</div>
             <div style={styles.statInfo}>
-              <h3 style={styles.statNumber}>{visualizationData.completedTasks || 0}</h3>
+              <h3 style={styles.statNumber}>{visualizationData.completedTasks}</h3>
               <p style={styles.statLabel}>Completed Tasks</p>
             </div>
           </div>
           <div style={styles.statCard}>
             <div style={styles.statIcon}>⏳</div>
             <div style={styles.statInfo}>
-              <h3 style={styles.statNumber}>{visualizationData.pendingTasks || 0}</h3>
+              <h3 style={styles.statNumber}>{visualizationData.pendingTasks}</h3>
               <p style={styles.statLabel}>Pending Tasks</p>
             </div>
           </div>
@@ -337,12 +335,9 @@ function StudentDashboard() {
             </button>
             <button 
               style={styles.actionBtn}
-              onClick={() => {
-                fetchTasks();
-                fetchVisualizationData();
-              }}
+              onClick={() => fetchTasks()}
             >
-              🔄 Refresh Data
+              🔄 Refresh Tasks
             </button>
           </div>
         </div>
@@ -351,7 +346,7 @@ function StudentDashboard() {
         <div style={styles.recentTasksCard}>
           <h3 style={styles.cardTitle}>📋 Recent Tasks</h3>
           <div style={styles.taskList}>
-            {[...tasks, ...taskHistory].slice(0, 5).map((task, index) => (
+            {tasks.slice(0, 5).map((task, index) => (
               <div key={index} style={styles.taskItem}>
                 <div style={styles.taskIcon}>
                   {task.completed ? '✅' : '⏳'}
@@ -373,8 +368,8 @@ function StudentDashboard() {
                 )}
               </div>
             ))}
-            {tasks.length === 0 && taskHistory.length === 0 && (
-              <p style={styles.noTasks}>No tasks yet. Submit your first task or check back later!</p>
+            {tasks.length === 0 && (
+              <p style={styles.noTasks}>No tasks assigned yet. Check back later!</p>
             )}
           </div>
         </div>
@@ -432,9 +427,9 @@ function StudentDashboard() {
 
         {/* Daily Tasks */}
         <div style={styles.dailyTasksCard}>
-          <h3 style={styles.cardTitle}>📅 Pending Tasks</h3>
+          <h3 style={styles.cardTitle}>📅 Today's Tasks</h3>
           <div style={styles.taskGrid}>
-            {[...tasks, ...dailyTasks].filter(task => !task.completed).map((task, index) => (
+            {dailyTasks.map((task, index) => (
               <div key={index} style={styles.dailyTaskItem}>
                 <div style={styles.taskHeader}>
                   <span style={styles.taskBadge}>{task.type || 'Task'}</span>
@@ -446,21 +441,25 @@ function StudentDashboard() {
                 <p style={styles.taskItemDesc}>{task.description}</p>
                 <div style={styles.taskFooter}>
                   <span style={styles.taskAssignedBy}>
-                    👨‍🏫 {task.assignedBy || 'Self Assigned'}
+                    👨‍🏫 {task.assignedBy || 'Trainer'}
                   </span>
-                  <button
-                    style={styles.completeTaskBtn}
-                    onClick={() => handleTaskComplete(task.id)}
-                  >
-                    ✅ Complete
-                  </button>
+                  {!task.completed ? (
+                    <button
+                      style={styles.completeTaskBtn}
+                      onClick={() => handleTaskComplete(task.id)}
+                    >
+                      ✅ Complete
+                    </button>
+                  ) : (
+                    <span style={styles.completedBadge}>✅ Done</span>
+                  )}
                 </div>
               </div>
             ))}
-            {[...tasks, ...dailyTasks].filter(task => !task.completed).length === 0 && (
+            {dailyTasks.length === 0 && (
               <div style={styles.emptyState}>
                 <div style={styles.emptyIcon}>📝</div>
-                <p>No pending tasks. Great job keeping up!</p>
+                <p>No tasks for today. Great job!</p>
               </div>
             )}
           </div>
@@ -473,26 +472,24 @@ function StudentDashboard() {
             {taskHistory.slice(0, 10).map((task, index) => (
               <div key={index} style={styles.historyItem}>
                 <div style={styles.historyIcon}>
-                  {task.type === 'project' ? '🚀' : task.type === 'assessment' ? '📊' : '📝'}
+                  {task.completed ? '✅' : task.type === 'project' ? '🚀' : '📝'}
                 </div>
                 <div style={styles.historyContent}>
                   <h4 style={styles.historyTitle}>{task.title}</h4>
                   <p style={styles.historyMeta}>
-                    {task.type} • {new Date(task.completedAt || task.createdAt || Date.now()).toLocaleDateString()} 
-                    {task.grade && ` • Grade: ${task.grade}/100`}
+                    {task.type} • {new Date(task.submittedAt || Date.now()).toLocaleDateString()} 
+                    {task.grade && ` • Grade: ${task.grade}`}
                   </p>
                 </div>
                 <div style={styles.historyStatus}>
-                  <span style={styles.statusCompleted}>✅ Completed</span>
+                  {task.completed ? (
+                    <span style={styles.statusCompleted}>Completed</span>
+                  ) : (
+                    <span style={styles.statusPending}>Pending</span>
+                  )}
                 </div>
               </div>
             ))}
-            {taskHistory.length === 0 && (
-              <div style={styles.emptyState}>
-                <div style={styles.emptyIcon}>📚</div>
-                <p>No completed tasks yet. Complete some tasks to see your history!</p>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -507,14 +504,12 @@ function StudentDashboard() {
           <h3 style={styles.cardTitle}>📈 Performance Overview</h3>
           <div style={styles.metricsGrid}>
             <div style={styles.metricItem}>
-              <div style={styles.metricValue}>{visualizationData.completedTasks || 0}</div>
+              <div style={styles.metricValue}>{visualizationData.completedTasks}</div>
               <div style={styles.metricLabel}>Tasks Completed</div>
               <div style={styles.metricTrend}>📈 +12% this week</div>
             </div>
             <div style={styles.metricItem}>
-              <div style={styles.metricValue}>
-                {Math.round((visualizationData.completedTasks / Math.max(visualizationData.completedTasks + visualizationData.pendingTasks, 1)) * 100) || 0}%
-              </div>
+              <div style={styles.metricValue}>{Math.round((visualizationData.completedTasks / (visualizationData.completedTasks + visualizationData.pendingTasks)) * 100) || 0}%</div>
               <div style={styles.metricLabel}>Completion Rate</div>
               <div style={styles.metricTrend}>🎯 Above Average</div>
             </div>
@@ -524,10 +519,8 @@ function StudentDashboard() {
               <div style={styles.metricTrend}>🏢 Active Connections</div>
             </div>
             <div style={styles.metricItem}>
-              <div style={styles.metricValue}>
-                {taskHistory.filter(t => t.grade && t.grade >= 80).length}
-              </div>
-              <div style={styles.metricLabel}>High Grades (80+)</div>
+              <div style={styles.metricValue}>{taskHistory.filter(t => t.grade >= 80).length}</div>
+              <div style={styles.metricLabel}>High Grades</div>
               <div style={styles.metricTrend}>⭐ Excellent Work</div>
             </div>
           </div>
@@ -636,20 +629,11 @@ function StudentDashboard() {
               <div style={styles.uploadHint}>CSV, Excel files (MAX. 10MB)</div>
             </label>
           </div>
-          <div style={styles.uploadInstructions}>
-            <h4>📋 Upload Instructions:</h4>
-            <ul>
-              <li>Upload your job application tracking data (CSV/Excel)</li>
-              <li>Include columns: company, position, applied_date, status</li>
-              <li>Data will be analyzed for company matches and trends</li>
-              <li>Recruiter connections will be mapped automatically</li>
-            </ul>
-          </div>
         </div>
 
         {/* Data Visualization */}
         <div style={styles.dataVisualizationCard}>
-          <h3 style={styles.cardTitle}>📊 Data Insights & Trends</h3>
+          <h3 style={styles.cardTitle}>📊 Data Insights</h3>
           <div style={styles.insightsGrid}>
             <div style={styles.insightCard}>
               <h4>📈 Application Trends</h4>
@@ -666,26 +650,15 @@ function StudentDashboard() {
                   </div>
                 ))}
               </div>
-              <p style={styles.chartDescription}>Weekly application activity</p>
             </div>
             
             <div style={styles.insightCard}>
-              <h4>🎯 Success Rate Analysis</h4>
+              <h4>🎯 Success Rate</h4>
               <div style={styles.successRate}>
                 <div style={styles.rateCircle}>
                   <span style={styles.rateValue}>84%</span>
                 </div>
                 <p style={styles.rateText}>Above average performance</p>
-                <div style={styles.rateBreakdown}>
-                  <div style={styles.rateItem}>
-                    <span style={styles.rateLabel}>Interview Rate:</span>
-                    <span style={styles.ratePercent}>32%</span>
-                  </div>
-                  <div style={styles.rateItem}>
-                    <span style={styles.rateLabel}>Offer Rate:</span>
-                    <span style={styles.ratePercent}>18%</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -695,24 +668,18 @@ function StudentDashboard() {
         {csvData.length > 0 && (
           <div style={styles.dataTableCard}>
             <h3 style={styles.cardTitle}>📋 Uploaded Data Preview</h3>
-            <div style={styles.dataTableHeader}>
-              <span style={styles.recordCount}>Showing {Math.min(csvData.length, 10)} of {csvData.length} records</span>
-              <button style={styles.exportBtn}>📊 Export Analysis</button>
-            </div>
             <div style={styles.tableContainer}>
               <table style={styles.dataTable}>
                 <thead>
                   <tr>
                     {Object.keys(csvData[0] || {}).map((key, index) => (
-                      <th key={index} style={styles.tableHeader}>
-                        {key.charAt(0).toUpperCase() + key.slice(1).replace('_', ' ')}
-                      </th>
+                      <th key={index} style={styles.tableHeader}>{key}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {csvData.slice(0, 10).map((row, index) => (
-                    <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white' }}>
+                    <tr key={index}>
                       {Object.values(row).map((value, i) => (
                         <td key={i} style={styles.tableCell}>{value}</td>
                       ))}
@@ -723,26 +690,12 @@ function StudentDashboard() {
             </div>
           </div>
         )}
-        
-        {csvData.length === 0 && (
-          <div style={styles.emptyDataState}>
-            <div style={styles.emptyIcon}>📊</div>
-            <h3>No Data Uploaded Yet</h3>
-            <p>Upload your job application data to see insights and company matches.</p>
-            <button 
-              style={styles.uploadPromptBtn}
-              onClick={() => document.getElementById('file-upload').click()}
-            >
-              📤 Upload Your First File
-            </button>
-          </div>
-        )}
       </div>
     );
   }
 }
 
-// Enhanced Styles with modern design
+// Enhanced Styles
 const styles = {
   container: {
     minHeight: '100vh',
@@ -793,10 +746,7 @@ const styles = {
     background: 'rgba(255, 255, 255, 0.95)',
     backdropFilter: 'blur(20px)',
     borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-    padding: '20px 0',
-    position: 'sticky',
-    top: 0,
-    zIndex: 100
+    padding: '20px 0'
   },
   headerContent: {
     maxWidth: '1400px',
@@ -880,17 +830,14 @@ const styles = {
   },
   activeTab: {
     background: 'rgba(255, 255, 255, 0.95)',
-    color: '#1e293b',
-    transform: 'translateY(-2px)',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+    color: '#1e293b'
   },
 
   // Main Content
   mainContent: {
     maxWidth: '1400px',
     margin: '24px auto',
-    padding: '0 24px',
-    paddingBottom: '60px'
+    padding: '0 24px'
   },
 
   // Dashboard
@@ -915,8 +862,7 @@ const styles = {
     alignItems: 'center',
     gap: '16px',
     border: '1px solid rgba(255, 255, 255, 0.2)',
-    transition: 'all 0.3s ease',
-    cursor: 'pointer'
+    transition: 'transform 0.2s ease'
   },
   statIcon: {
     fontSize: '32px'
@@ -1060,7 +1006,7 @@ const styles = {
     border: '1px solid #e2e8f0',
     borderRadius: '12px',
     padding: '20px',
-    transition: 'all 0.3s ease'
+    transition: 'transform 0.2s ease'
   },
   taskHeader: {
     display: 'flex',
@@ -1110,8 +1056,7 @@ const styles = {
     borderRadius: '8px',
     fontSize: '12px',
     fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease'
+    cursor: 'pointer'
   },
   completedBadge: {
     color: '#059669',
@@ -1333,7 +1278,7 @@ const styles = {
     height: '100%',
     background: 'linear-gradient(90deg, #3b82f6, #1d4ed8)',
     borderRadius: '4px',
-    transition: 'width 0.5s ease'
+    transition: 'width 0.3s ease'
   },
   progressPercent: {
     minWidth: '50px',
@@ -1356,8 +1301,7 @@ const styles = {
     border: '1px solid rgba(255, 255, 255, 0.2)'
   },
   uploadArea: {
-    position: 'relative',
-    marginBottom: '24px'
+    position: 'relative'
   },
   fileInput: {
     position: 'absolute',
@@ -1392,12 +1336,6 @@ const styles = {
     fontSize: '14px',
     color: '#6b7280'
   },
-  uploadInstructions: {
-    background: '#f0f9ff',
-    border: '1px solid #e0f2fe',
-    borderRadius: '12px',
-    padding: '20px'
-  },
 
   // Data Visualization
   dataVisualizationCard: {
@@ -1423,8 +1361,7 @@ const styles = {
     alignItems: 'end',
     gap: '8px',
     height: '100px',
-    marginTop: '16px',
-    marginBottom: '8px'
+    marginTop: '16px'
   },
   chartBar: {
     flex: 1,
@@ -1443,12 +1380,6 @@ const styles = {
     fontSize: '12px',
     color: '#6b7280',
     fontWeight: '500'
-  },
-  chartDescription: {
-    fontSize: '12px',
-    color: '#6b7280',
-    textAlign: 'center',
-    margin: 0
   },
   successRate: {
     display: 'flex',
@@ -1478,26 +1409,6 @@ const styles = {
     textAlign: 'center',
     margin: 0
   },
-  rateBreakdown: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-    alignSelf: 'stretch'
-  },
-  rateItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  rateLabel: {
-    fontSize: '12px',
-    color: '#6b7280'
-  },
-  ratePercent: {
-    fontSize: '12px',
-    fontWeight: '600',
-    color: '#1e293b'
-  },
 
   // Data Table
   dataTableCard: {
@@ -1507,30 +1418,8 @@ const styles = {
     padding: '32px',
     border: '1px solid rgba(255, 255, 255, 0.2)'
   },
-  dataTableHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '16px'
-  },
-  recordCount: {
-    fontSize: '14px',
-    color: '#6b7280'
-  },
-  exportBtn: {
-    padding: '8px 16px',
-    background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '12px',
-    fontWeight: '600',
-    cursor: 'pointer'
-  },
   tableContainer: {
-    overflowX: 'auto',
-    borderRadius: '8px',
-    border: '1px solid #e2e8f0'
+    overflowX: 'auto'
   },
   dataTable: {
     width: '100%',
@@ -1571,15 +1460,6 @@ const styles = {
     color: '#6b7280',
     textAlign: 'center'
   },
-  emptyDataState: {
-    background: 'rgba(255, 255, 255, 0.95)',
-    backdropFilter: 'blur(20px)',
-    borderRadius: '16px',
-    padding: '60px 32px',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    textAlign: 'center',
-    color: '#6b7280'
-  },
   emptyIcon: {
     fontSize: '48px',
     marginBottom: '16px',
@@ -1590,17 +1470,6 @@ const styles = {
     color: '#6b7280',
     fontStyle: 'italic',
     padding: '40px 20px'
-  },
-  uploadPromptBtn: {
-    marginTop: '16px',
-    padding: '12px 24px',
-    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer'
   },
 
   // Task List Items
