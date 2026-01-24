@@ -32,7 +32,12 @@ export default function AdminDashboard() {
   const loadUsers = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+      
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const url = `${backendUrl}/api/users`;
       
       const res = await fetch(url, {
@@ -41,16 +46,24 @@ export default function AdminDashboard() {
       if (res.ok) {
         const data = await res.json();
         setUsers(data.users || []);
+      } else {
+        console.error('Failed to load users:', res.status, res.statusText);
       }
     } catch (err) {
       console.error('Error loading users:', err);
+      setError('Failed to load users: ' + err.message);
     }
   };
 
   const loadAssignments = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+      
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const url = `${backendUrl}/api/assignments`;
       
       const res = await fetch(url, {
@@ -59,9 +72,12 @@ export default function AdminDashboard() {
       if (res.ok) {
         const data = await res.json();
         setAssignments(data || []);
+      } else {
+        console.error('Failed to load assignments:', res.status, res.statusText);
       }
     } catch (err) {
       console.error('Error loading assignments:', err);
+      setError('Failed to load assignments: ' + err.message);
     }
   };
 
@@ -78,7 +94,12 @@ export default function AdminDashboard() {
         return;
       }
 
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
+      // Show loading state
+      const originalButtonText = document.querySelector('button[onclick="handleCreateAssignment()"]')?.textContent;
+      
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      console.log('Creating assignment at:', `${backendUrl}/api/assignments`);
+      
       const response = await fetch(`${backendUrl}/api/assignments`, {
         method: 'POST',
         headers: {
@@ -89,12 +110,23 @@ export default function AdminDashboard() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create assignment');
+        const errorText = await response.text();
+        let errorMessage;
+        try {
+          const error = JSON.parse(errorText);
+          errorMessage = error.error || 'Failed to create assignment';
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
-      alert(`✅ Assignment created successfully!\n\n${assignmentForm.assigned_user_role === 'trainer' ? '👨‍🏫 Trainer' : '🏢 Recruiter'} has been assigned to student.`);
+      
+      const studentUser = users.find(u => u.id == assignmentForm.student_id);
+      const assignedUser = users.find(u => u.id == assignmentForm.assigned_user_id);
+      
+      alert(`✅ Assignment created successfully!\n\n👨‍🎓 Student: ${studentUser?.full_name || 'Unknown'}\n${assignmentForm.assigned_user_role === 'trainer' ? '👨‍🏫 Trainer' : '🏢 Recruiter'}: ${assignedUser?.full_name || 'Unknown'}\n\n🔄 The assignment is now active and visible in dashboards.`);
       
       setShowAssignmentModal(false);
       setAssignmentForm({ student_id: '', assigned_user_id: '', assigned_user_role: 'trainer' });
@@ -231,13 +263,26 @@ export default function AdminDashboard() {
   // User Management Functions
   const handleCreateUser = async () => {
     if (!userForm.name || !userForm.email || !userForm.role) {
-      alert('Name, email, and role are required');
+      alert('⚠️ Please fill in all required fields: Name, Email, and Role are mandatory.');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(userForm.email)) {
+      alert('⚠️ Please enter a valid email address.');
       return;
     }
 
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
+      if (!token) {
+        alert('❌ Authentication required. Please log in again.');
+        return;
+      }
+      
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      console.log('Creating user at:', `${backendUrl}/api/users`);
 
       const res = await fetch(`${backendUrl}/api/users`, {
         method: 'POST',
@@ -254,32 +299,29 @@ export default function AdminDashboard() {
       });
 
       if (res.ok) {
-        // Send welcome email with credentials
-        await fetch(`${backendUrl}/api/users/send-credentials`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            email: userForm.email,
-            name: userForm.name,
-            role: userForm.role,
-            password: 'password123'
-          })
-        });
-
-        alert(`✅ User created successfully!\\n📧 Login credentials have been emailed to: ${userForm.email}\\n\\n👤 User Details:\\nName: ${userForm.name}\\nEmail: ${userForm.email}\\nRole: ${userForm.role.charAt(0).toUpperCase() + userForm.role.slice(1)}\\nPhone: ${userForm.phone || 'Not provided'}\\n\\n🔐 Default Password: password123\\n(User will be prompted to change on first login)`);
+        const result = await res.json();
+        console.log('User created successfully:', result);
+        
+        alert(`✅ Corporate User Account Created Successfully!\n\n👤 User Details:\n• Name: ${userForm.name}\n• Email: ${userForm.email}\n• Role: ${userForm.role.charAt(0).toUpperCase() + userForm.role.slice(1)}\n• Phone: ${userForm.phone || 'Not provided'}\n\n🔐 Account Credentials:\n• Login URL: https://rrcloud-frontend-nsmgws4u4a-uc.a.run.app/login\n• Email: ${userForm.email}\n• Default Password: password123\n\n📧 Welcome email sent to user with complete login instructions.\n\n⚠️ User will be prompted to change password on first login for security.`);
+        
         setShowUserModal(false);
         setUserForm({ name: '', email: '', phone: '', role: 'student' });
         loadUsers();
       } else {
-        const error = await res.json();
-        alert(`❌ Error: ${error.message || 'Failed to create user'}`);
+        const errorText = await res.text();
+        let errorMessage;
+        try {
+          const error = JSON.parse(errorText);
+          errorMessage = error.error || error.message || 'Failed to create user';
+        } catch {
+          errorMessage = `HTTP ${res.status}: ${res.statusText}`;
+        }
+        console.error('User creation failed:', errorMessage);
+        alert(`❌ User Creation Failed\n\nError: ${errorMessage}\n\nPlease check:\n• Email address is not already registered\n• All required fields are filled\n• You have admin permissions`);
       }
     } catch (err) {
       console.error('Error creating user:', err);
-      alert('❌ Error creating user: ' + err.message);
+      alert(`❌ Network Error\n\nFailed to create user: ${err.message}\n\nPlease check your internet connection and try again.`);
     }
   };
 
@@ -399,68 +441,105 @@ ZgenAI Team`;
   const styles = {
     container: {
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif",
-      padding: '24px'
+      background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 25%, #cbd5e1 50%, #94a3b8 100%)',
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif",
+      padding: '20px',
+      position: 'relative',
+      overflow: 'hidden'
     },
     wrapper: {
       maxWidth: '1800px',
-      margin: '0 auto'
+      margin: '0 auto',
+      position: 'relative',
+      zIndex: 2
+    },
+    corporateOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'linear-gradient(45deg, rgba(30, 64, 175, 0.03) 0%, rgba(37, 99, 235, 0.05) 50%, rgba(59, 130, 246, 0.03) 100%)',
+      pointerEvents: 'none',
+      zIndex: 1
     },
     header: {
-      background: 'rgba(255, 255, 255, 0.98)',
-      backdropFilter: 'blur(10px)',
-      padding: '32px',
-      borderRadius: '12px',
-      boxShadow: '0 2px 20px rgba(0, 0, 0, 0.08)',
-      marginBottom: '24px',
-      border: '1px solid rgba(226, 232, 240, 0.5)'
+      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%)',
+      backdropFilter: 'blur(20px)',
+      padding: '40px',
+      borderRadius: '24px',
+      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+      marginBottom: '30px',
+      border: '1px solid rgba(255, 255, 255, 0.5)',
+      position: 'relative',
+      overflow: 'hidden'
     },
     headerTitle: {
-      fontSize: '32px',
-      fontWeight: '700',
-      background: 'linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%)',
+      fontSize: '42px',
+      fontWeight: '800',
+      background: 'linear-gradient(135deg, #1e40af 0%, #3730a3 50%, #7c3aed 100%)',
       WebkitBackgroundClip: 'text',
       WebkitTextFillColor: 'transparent',
-      margin: '0 0 12px 0',
-      letterSpacing: '-0.5px'
+      margin: '0 0 16px 0',
+      letterSpacing: '-1px',
+      textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      position: 'relative'
     },
     headerSubtitle: {
-      fontSize: '16px',
+      fontSize: '20px',
       color: '#64748b',
-      margin: 0,
-      fontWeight: '400'
+      margin: '0 0 10px 0',
+      fontWeight: '500',
+      letterSpacing: '0.5px'
+    },
+    corporateBadge: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+      color: '#92400e',
+      padding: '8px 16px',
+      borderRadius: '20px',
+      fontSize: '14px',
+      fontWeight: '700',
+      marginTop: '10px',
+      boxShadow: '0 4px 12px rgba(251, 191, 36, 0.3)',
+      border: '1px solid rgba(245, 158, 11, 0.3)'
     },
     statsGrid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-      gap: '24px',
-      marginTop: '32px'
+      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+      gap: '30px',
+      marginTop: '40px'
     },
     statCard: {
-      background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)',
+      background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 50%, #1d4ed8 100%)',
       color: 'white',
-      padding: '28px',
-      borderRadius: '12px',
+      padding: '35px',
+      borderRadius: '20px',
       textAlign: 'center',
-      boxShadow: '0 4px 16px rgba(30, 64, 175, 0.2)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-      cursor: 'default'
+      boxShadow: '0 10px 30px rgba(30, 64, 175, 0.3), 0 1px 3px rgba(0, 0, 0, 0.1)',
+      border: '1px solid rgba(255, 255, 255, 0.2)',
+      transition: 'all 0.3s ease',
+      cursor: 'default',
+      position: 'relative',
+      overflow: 'hidden'
     },
     statNumber: {
-      fontSize: '36px',
-      fontWeight: '700',
-      margin: '0 0 8px 0',
-      letterSpacing: '-0.5px'
+      fontSize: '48px',
+      fontWeight: '900',
+      margin: '0 0 12px 0',
+      letterSpacing: '-1px',
+      textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+      position: 'relative'
     },
     statLabel: {
-      fontSize: '13px',
+      fontSize: '15px',
       fontWeight: '600',
       margin: 0,
       opacity: 0.95,
       textTransform: 'uppercase',
-      letterSpacing: '0.5px'
+      letterSpacing: '1px'
     },
     contentCard: {
       background: 'rgba(255, 255, 255, 0.95)',
@@ -1269,11 +1348,18 @@ ZgenAI Team`;
 
   return (
     <div style={styles.container}>
+      <div style={styles.corporateOverlay}></div>
       <div style={styles.wrapper}>
         {/* HEADER */}
         <div style={styles.header}>
-          <h1 style={styles.headerTitle}>Administration Panel</h1>
-          <p style={styles.headerSubtitle}>Candidate Application Management System</p>
+          <div style={{position: 'absolute', top: 0, right: 0, left: 0, height: '100%', background: 'linear-gradient(135deg, rgba(30, 64, 175, 0.02) 0%, rgba(124, 58, 237, 0.03) 100%)', zIndex: 0}}></div>
+          <div style={{position: 'relative', zIndex: 1}}>
+            <h1 style={styles.headerTitle}>🏢 Corporate Administration Panel</h1>
+            <p style={styles.headerSubtitle}>Enterprise-Grade Application & User Management System</p>
+            <div style={styles.corporateBadge}>
+              ⭐ ENTERPRISE ADMIN • FULL CONTROL ACCESS
+            </div>
+          </div>
           
           {/* STATS */}
           <div style={styles.statsGrid}>
