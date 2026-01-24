@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug User Creation</title>
+</head>
+<body>
+    <h1>Debug User Creation</h1>
+    <div id="status"></div>
+    
+    <script>
+        async function debugUserCreation() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = 'Starting debug...<br>';
+            
+            // Check if we're on the right backend
+            const backendUrl = 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+            
+            try {
+                // Test health endpoint
+                statusDiv.innerHTML += '1. Testing health endpoint...<br>';
+                const healthResponse = await fetch(`${backendUrl}/health`);
+                const healthData = await healthResponse.json();
+                statusDiv.innerHTML += `✅ Health: ${JSON.stringify(healthData)}<br><br>`;
+                
+                // Test login
+                statusDiv.innerHTML += '2. Testing login...<br>';
+                const loginResponse = await fetch(`${backendUrl}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: 'admin@zgenai.com', password: 'admin123' })
+                });
+                const loginData = await loginResponse.json();
+                statusDiv.innerHTML += `✅ Login: ${loginResponse.status} - ${loginData.message}<br>`;
+                statusDiv.innerHTML += `Token preview: ${loginData.token?.substring(0, 50)}...<br><br>`;
+                
+                if (loginData.token) {
+                    // Test user creation
+                    statusDiv.innerHTML += '3. Testing user creation...<br>';
+                    const userResponse = await fetch(`${backendUrl}/api/users`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${loginData.token}`
+                        },
+                        body: JSON.stringify({
+                            name: 'Debug Test User',
+                            email: `debug-${Date.now()}@example.com`,
+                            phone: '999-999-9999',
+                            role: 'student'
+                        })
+                    });
+                    
+                    if (userResponse.ok) {
+                        const userData = await userResponse.json();
+                        statusDiv.innerHTML += `✅ User creation successful: ${JSON.stringify(userData)}<br>`;
+                    } else {
+                        const errorData = await userResponse.json();
+                        statusDiv.innerHTML += `❌ User creation failed: ${userResponse.status} - ${JSON.stringify(errorData)}<br>`;
+                    }
+                }
+                
+            } catch (error) {
+                statusDiv.innerHTML += `❌ Error: ${error.message}<br>`;
+            }
+        }
+        
+        // Run debug when page loads
+        window.onload = debugUserCreation;
+    </script>
+</body>
+</html>
