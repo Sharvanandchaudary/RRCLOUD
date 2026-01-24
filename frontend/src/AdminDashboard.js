@@ -27,7 +27,7 @@ export default function AdminDashboard() {
 
   const loadUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
       const url = `${backendUrl}/api/users`;
       
@@ -147,7 +147,7 @@ export default function AdminDashboard() {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
 
       const res = await fetch(`${backendUrl}/api/users`, {
@@ -201,7 +201,7 @@ export default function AdminDashboard() {
     if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
 
       const res = await fetch(`${backendUrl}/api/users/${userId}/block`, {
@@ -232,7 +232,7 @@ export default function AdminDashboard() {
     if (!window.confirm(`⚠️ PERMANENT DELETION WARNING ⚠️\n\nAre you sure you want to DELETE this user account?\n\n👤 User: ${email}\n\n🚨 This action cannot be undone!\n🚨 All user data will be permanently removed!`)) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
 
       const res = await fetch(`${backendUrl}/api/users/${userId}`, { 
@@ -259,7 +259,7 @@ export default function AdminDashboard() {
     if (!window.confirm(`⚠️ PERMANENT DELETION WARNING ⚠️\n\nAre you sure you want to DELETE this application?\n\n📝 Applicant: ${name}\n\n🚨 This action cannot be undone!\n🚨 All application data will be permanently removed!`)) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
 
       const res = await fetch(`${backendUrl}/api/applications/${appId}`, { 
