@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 export default function AdminDashboard() {
   const [applications, setApplications] = useState([]);
   const [users, setUsers] = useState([]);
+  const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedApp, setSelectedApp] = useState(null);
@@ -10,7 +11,9 @@ export default function AdminDashboard() {
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState('pending');
   const [showUserModal, setShowUserModal] = useState(false);
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [userForm, setUserForm] = useState({ name: '', email: '', phone: '', role: 'student' });
+  const [assignmentForm, setAssignmentForm] = useState({ student_id: '', assigned_user_id: '', assigned_user_role: 'trainer' });
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -23,6 +26,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadApplications();
     loadUsers();
+    loadAssignments();
   }, []);
 
   const loadUsers = async () => {
@@ -40,6 +44,91 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       console.error('Error loading users:', err);
+    }
+  };
+
+  const loadAssignments = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
+      const url = `${backendUrl}/api/assignments`;
+      
+      const res = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAssignments(data || []);
+      }
+    } catch (err) {
+      console.error('Error loading assignments:', err);
+    }
+  };
+
+  const handleCreateAssignment = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('❌ Please login to create assignments');
+        return;
+      }
+
+      if (!assignmentForm.student_id || !assignmentForm.assigned_user_id || !assignmentForm.assigned_user_role) {
+        alert('⚠️ Please fill in all required fields');
+        return;
+      }
+
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
+      const response = await fetch(`${backendUrl}/api/assignments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(assignmentForm)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create assignment');
+      }
+
+      const result = await response.json();
+      alert(`✅ Assignment created successfully!\n\n${assignmentForm.assigned_user_role === 'trainer' ? '👨‍🏫 Trainer' : '🏢 Recruiter'} has been assigned to student.`);
+      
+      setShowAssignmentModal(false);
+      setAssignmentForm({ student_id: '', assigned_user_id: '', assigned_user_role: 'trainer' });
+      loadAssignments(); // Reload assignments
+    } catch (error) {
+      console.error('Assignment creation error:', error);
+      alert(`❌ Failed to create assignment: ${error.message}`);
+    }
+  };
+
+  const handleDeleteAssignment = async (assignmentId) => {
+    if (!window.confirm('Are you sure you want to delete this assignment?')) return;
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
+      
+      const response = await fetch(`${backendUrl}/api/assignments/${assignmentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete assignment');
+      }
+
+      alert('✅ Assignment deleted successfully!');
+      loadAssignments(); // Reload assignments
+    } catch (error) {
+      console.error('Assignment deletion error:', error);
+      alert(`❌ Failed to delete assignment: ${error.message}`);
     }
   };
 
@@ -1050,6 +1139,134 @@ ZgenAI Team`;
     );
   };
 
+  const renderAssignmentManagement = () => {
+    const students = users.filter(user => user.role === 'student');
+    const trainers = users.filter(user => user.role === 'trainer');
+    const recruiters = users.filter(user => user.role === 'recruiter');
+
+    return (
+      <div style={{padding: '0'}}>
+        {/* Assignment Management Header */}
+        <div style={{
+          padding: '25px', 
+          background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)', 
+          color: 'white',
+          borderRadius: '12px 12px 0 0'
+        }}>
+          <h2 style={{margin: '0 0 10px 0', fontSize: '24px', fontWeight: '700'}}>
+            🔄 Assignment Management
+          </h2>
+          <p style={{margin: 0, opacity: 0.9, fontSize: '16px'}}>
+            Map recruiters and trainers to students • Manage relationships • Track connections
+          </p>
+        </div>
+
+        {/* Controls */}
+        <div style={{
+          padding: '20px',
+          backgroundColor: '#f8fafc',
+          borderBottom: '1px solid #e2e8f0',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div style={{display: 'flex', gap: '15px', alignItems: 'center'}}>
+            <div style={{fontSize: '14px', color: '#64748b'}}>
+              👥 {students.length} Students • 👨‍🏫 {trainers.length} Trainers • 🏢 {recruiters.length} Recruiters
+            </div>
+          </div>
+          
+          <button 
+            onClick={() => setShowAssignmentModal(true)}
+            style={{
+              ...styles.btn('primary'),
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px',
+              fontWeight: '600'
+            }}
+          >
+            ➕ Create Assignment
+          </button>
+        </div>
+
+        {/* Current Assignments */}
+        <div style={{padding: '20px'}}>
+          {assignments.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '40px',
+              color: '#6b7280',
+              fontSize: '18px'
+            }}>
+              <div style={{fontSize: '48px', marginBottom: '20px'}}>🔄</div>
+              <div style={{fontWeight: '600', marginBottom: '10px'}}>No assignments yet</div>
+              <div>Create assignments to map trainers and recruiters to students</div>
+            </div>
+          ) : (
+            <div>
+              <h3 style={{marginBottom: '20px', color: '#374151', fontSize: '18px', fontWeight: '600'}}>
+                Current Assignments ({assignments.length})
+              </h3>
+              <div style={{
+                display: 'grid',
+                gap: '15px',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))'
+              }}>
+                {assignments.map(assignment => (
+                  <div key={assignment.id} style={{
+                    padding: '20px',
+                    backgroundColor: 'white',
+                    borderRadius: '12px',
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                  }}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px'}}>
+                      <div style={{
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: assignment.assigned_user_role === 'trainer' ? '#7c3aed' : '#059669'
+                      }}>
+                        {assignment.assigned_user_role === 'trainer' ? '👨‍🏫' : '🏢'} {assignment.assigned_user_role.toUpperCase()}
+                      </div>
+                      <button
+                        onClick={() => handleDeleteAssignment(assignment.id)}
+                        style={{
+                          background: '#fee2e2',
+                          color: '#dc2626',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '6px 8px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        🗑️ Remove
+                      </button>
+                    </div>
+                    
+                    <div style={{marginBottom: '10px'}}>
+                      <strong>Student:</strong> {assignment.student_name} ({assignment.student_email})
+                    </div>
+                    
+                    <div style={{marginBottom: '10px'}}>
+                      <strong>{assignment.assigned_user_role === 'trainer' ? 'Trainer' : 'Recruiter'}:</strong> {assignment.assigned_user_name} ({assignment.assigned_user_email})
+                    </div>
+                    
+                    <div style={{fontSize: '12px', color: '#64748b'}}>
+                      Created: {new Date(assignment.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.wrapper}>
@@ -1128,6 +1345,12 @@ ZgenAI Team`;
               >
                 User Management ({users.length})
               </button>
+              <button 
+                style={styles.tab(activeTab === 'assignments')}
+                onClick={() => setActiveTab('assignments')}
+              >
+                Assignments ({assignments.length})
+              </button>
             </div>
 
             {/* TAB CONTENT */}
@@ -1136,6 +1359,7 @@ ZgenAI Team`;
               {activeTab === 'approved' && renderApplicationsTable(approved, 'approved')}
               {activeTab === 'rejected' && renderApplicationsTable(rejected, 'rejected')}
               {activeTab === 'users' && renderUserManagement()}
+              {activeTab === 'assignments' && renderAssignmentManagement()}
             </div>
           </div>
         )}
@@ -1293,6 +1517,143 @@ ZgenAI Team`;
                 onClick={() => {
                   setShowUserModal(false);
                   setUserForm({ name: '', email: '', phone: '', role: 'student' });
+                }}
+                style={{...styles.btn('secondary'), flex: 1, padding: '15px', fontSize: '16px'}}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ASSIGNMENT CREATION MODAL */}
+      {showAssignmentModal && (
+        <div style={styles.modal} onClick={() => setShowAssignmentModal(false)}>
+          <div style={{...styles.modalContent, maxWidth: '500px'}} onClick={(e) => e.stopPropagation()}>
+            <div style={{
+              background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+              color: 'white',
+              padding: '25px',
+              margin: '-30px -30px 25px -30px',
+              borderRadius: '15px 15px 0 0'
+            }}>
+              <h2 style={{...styles.modalTitle, color: 'white', margin: '0 0 10px 0'}}>
+                🔄 Create Assignment
+              </h2>
+              <p style={{...styles.modalSubtitle, color: 'rgba(255,255,255,0.9)', margin: 0}}>
+                Map trainers and recruiters to students for seamless collaboration
+              </p>
+            </div>
+
+            <div style={{padding: '0'}}>
+              <div style={{marginBottom: '20px'}}>
+                <label style={styles.label}>Select Student</label>
+                <select
+                  value={assignmentForm.student_id}
+                  onChange={(e) => setAssignmentForm({...assignmentForm, student_id: e.target.value})}
+                  style={styles.input}
+                  required
+                >
+                  <option value="">Choose student...</option>
+                  {users.filter(user => user.role === 'student').map(student => (
+                    <option key={student.id} value={student.id}>
+                      {student.full_name} ({student.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{marginBottom: '20px'}}>
+                <label style={styles.label}>Assignment Type</label>
+                <select
+                  value={assignmentForm.assigned_user_role}
+                  onChange={(e) => {
+                    setAssignmentForm({
+                      ...assignmentForm, 
+                      assigned_user_role: e.target.value,
+                      assigned_user_id: '' // Reset selected user when role changes
+                    });
+                  }}
+                  style={styles.input}
+                  required
+                >
+                  <option value="trainer">👨‍🏫 Assign Trainer</option>
+                  <option value="recruiter">🏢 Assign Recruiter</option>
+                </select>
+              </div>
+
+              <div style={{marginBottom: '30px'}}>
+                <label style={styles.label}>
+                  Select {assignmentForm.assigned_user_role === 'trainer' ? 'Trainer' : 'Recruiter'}
+                </label>
+                <select
+                  value={assignmentForm.assigned_user_id}
+                  onChange={(e) => setAssignmentForm({...assignmentForm, assigned_user_id: e.target.value})}
+                  style={styles.input}
+                  required
+                >
+                  <option value="">Choose {assignmentForm.assigned_user_role}...</option>
+                  {users.filter(user => user.role === assignmentForm.assigned_user_role).map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.full_name} ({user.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Assignment Details */}
+              <div style={{
+                padding: '20px',
+                background: '#f8fafc',
+                borderRadius: '12px',
+                marginBottom: '25px',
+                border: '1px solid #e2e8f0'
+              }}>
+                <h4 style={{margin: '0 0 15px 0', color: '#374151', fontSize: '16px', fontWeight: '600'}}>
+                  ✨ What this assignment enables:
+                </h4>
+                <ul style={{margin: '0', paddingLeft: '20px', color: '#64748b', fontSize: '14px', lineHeight: '1.6'}}>
+                  {assignmentForm.assigned_user_role === 'trainer' ? (
+                    <>
+                      <li><strong>Task Assignment:</strong> Trainer can create daily tasks for the student</li>
+                      <li><strong>Progress Tracking:</strong> Monitor student task completion and progress</li>
+                      <li><strong>Direct Communication:</strong> Seamless trainer-student interaction</li>
+                      <li><strong>Dashboard Integration:</strong> Tasks appear in student dashboard</li>
+                    </>
+                  ) : (
+                    <>
+                      <li><strong>Data Sharing:</strong> Recruiter can upload Excel files for student</li>
+                      <li><strong>Job Applications:</strong> Share company applications and status</li>
+                      <li><strong>Direct Communication:</strong> Seamless recruiter-student interaction</li>
+                      <li><strong>Dashboard Integration:</strong> Data appears in student dashboard</li>
+                    </>
+                  )}
+                </ul>
+              </div>
+            </div>
+
+            <div style={styles.modalActions}>
+              <button 
+                onClick={handleCreateAssignment}
+                style={{
+                  ...styles.btn('approve'), 
+                  flex: 1, 
+                  padding: '15px',
+                  fontSize: '16px',
+                  fontWeight: '700'
+                }}
+                disabled={!assignmentForm.student_id || !assignmentForm.assigned_user_id || !assignmentForm.assigned_user_role}
+              >
+                {!assignmentForm.student_id || !assignmentForm.assigned_user_id ? 
+                  '⚠️ Select Both Users' : 
+                  '🚀 Create Assignment'
+                }
+              </button>
+              <button 
+                onClick={() => {
+                  setShowAssignmentModal(false);
+                  setAssignmentForm({ student_id: '', assigned_user_id: '', assigned_user_role: 'trainer' });
                 }}
                 style={{...styles.btn('secondary'), flex: 1, padding: '15px', fontSize: '16px'}}
               >

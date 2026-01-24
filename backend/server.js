@@ -401,6 +401,109 @@ async function ensureDatabase() {
       );
     }
     
+    // Create assignments table for mapping recruiters/trainers to students
+    const checkAssignments = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'assignments'
+      )
+    `);
+    
+    if (!checkAssignments.rows[0].exists) {
+      console.log('Creating assignments table...');
+      await db.query(`
+        CREATE TABLE assignments (
+          id SERIAL PRIMARY KEY,
+          student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          assigned_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          assigned_user_role VARCHAR(50) NOT NULL CHECK (assigned_user_role IN ('recruiter', 'trainer')),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(student_id, assigned_user_id, assigned_user_role)
+        )
+      `);
+    }
+
+    // Create student_data table for Excel uploads from recruiters
+    const checkStudentData = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'student_data'
+      )
+    `);
+    
+    if (!checkStudentData.rows[0].exists) {
+      console.log('Creating student_data table...');
+      await db.query(`
+        CREATE TABLE student_data (
+          id SERIAL PRIMARY KEY,
+          student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          recruiter_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          company_name VARCHAR(255),
+          application_date DATE,
+          status VARCHAR(100),
+          notes TEXT,
+          file_path TEXT,
+          uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+    }
+
+    // Create trainer_tasks table for daily tasks
+    const checkTrainerTasks = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'trainer_tasks'
+      )
+    `);
+    
+    if (!checkTrainerTasks.rows[0].exists) {
+      console.log('Creating trainer_tasks table...');
+      await db.query(`
+        CREATE TABLE trainer_tasks (
+          id SERIAL PRIMARY KEY,
+          trainer_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          student_id INTEGER REFERENCES users(id),
+          title VARCHAR(255) NOT NULL,
+          description TEXT,
+          task_date DATE NOT NULL,
+          due_date DATE,
+          status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'overdue')),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+    }
+
+    // Create interview_calls table for student entries
+    const checkInterviewCalls = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'interview_calls'
+      )
+    `);
+    
+    if (!checkInterviewCalls.rows[0].exists) {
+      console.log('Creating interview_calls table...');
+      await db.query(`
+        CREATE TABLE interview_calls (
+          id SERIAL PRIMARY KEY,
+          student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          company_name VARCHAR(255),
+          contact_person VARCHAR(255),
+          contact_number VARCHAR(50),
+          interview_date DATE,
+          interview_time TIME,
+          interview_type VARCHAR(50) CHECK (interview_type IN ('phone', 'video', 'in_person')),
+          status VARCHAR(50) DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'completed', 'cancelled', 'rescheduled')),
+          notes TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+    }
+    
     console.log('✅ Database schema is ready');
   } catch (err) {
     console.error('❌ Database setup error:', err.message);
@@ -1074,6 +1177,341 @@ app.post('/auth/change-password', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('/auth/change-password error:', err);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/* -------------------- ASSIGNMENT MANAGEMENT ENDPOINTS -------------------- */
+
+// Get assignments for a user (Students see their assignments, Admins see all)
+app.get('/api/assignments', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    const userId = req.user?.id;
+
+    let assignments;
+    if (userRole === 'admin') {
+      // Admin can see all assignments
+      assignments = await db.query(`
+        SELECT a.*, 
+               s.full_name as student_name, s.email as student_email,
+               au.full_name as assigned_user_name, au.email as assigned_user_email
+        FROM assignments a
+        JOIN users s ON a.student_id = s.id
+        JOIN users au ON a.assigned_user_id = au.id
+        ORDER BY a.created_at DESC
+      `);
+    } else if (userRole === 'student') {
+      // Students see their assignments
+      assignments = await db.query(`
+        SELECT a.*, 
+               au.full_name as assigned_user_name, au.email as assigned_user_email
+        FROM assignments a
+        JOIN users au ON a.assigned_user_id = au.id
+        WHERE a.student_id = $1
+        ORDER BY a.created_at DESC
+      `, [userId]);
+    } else {
+      // Trainers/Recruiters see students assigned to them
+      assignments = await db.query(`
+        SELECT a.*, 
+               s.full_name as student_name, s.email as student_email
+        FROM assignments a
+        JOIN users s ON a.student_id = s.id
+        WHERE a.assigned_user_id = $1 AND a.assigned_user_role = $2
+        ORDER BY a.created_at DESC
+      `, [userId, userRole]);
+    }
+
+    res.json(assignments.rows);
+  } catch (error) {
+    console.error('Assignment fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch assignments' });
+  }
+});
+
+// Create assignment (Admin only)
+app.post('/api/assignments', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    if (userRole !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { student_id, assigned_user_id, assigned_user_role } = req.body;
+    
+    if (!student_id || !assigned_user_id || !assigned_user_role) {
+      return res.status(400).json({ error: 'Student ID, assigned user ID, and role are required' });
+    }
+
+    // Check if assignment already exists
+    const existing = await db.query(
+      'SELECT id FROM assignments WHERE student_id = $1 AND assigned_user_id = $2 AND assigned_user_role = $3',
+      [student_id, assigned_user_id, assigned_user_role]
+    );
+
+    if (existing.rowCount > 0) {
+      return res.status(400).json({ error: 'Assignment already exists' });
+    }
+
+    const result = await db.query(
+      `INSERT INTO assignments (student_id, assigned_user_id, assigned_user_role)
+       VALUES ($1, $2, $3) RETURNING *`,
+      [student_id, assigned_user_id, assigned_user_role]
+    );
+
+    res.json({ message: 'Assignment created successfully', assignment: result.rows[0] });
+  } catch (error) {
+    console.error('Assignment creation error:', error);
+    res.status(500).json({ error: 'Failed to create assignment' });
+  }
+});
+
+// Delete assignment (Admin only)
+app.delete('/api/assignments/:id', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    if (userRole !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    const result = await db.query('DELETE FROM assignments WHERE id = $1 RETURNING *', [id]);
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Assignment not found' });
+    }
+
+    res.json({ message: 'Assignment deleted successfully' });
+  } catch (error) {
+    console.error('Assignment deletion error:', error);
+    res.status(500).json({ error: 'Failed to delete assignment' });
+  }
+});
+
+// Get student data (for recruiters and students)
+app.get('/api/student-data', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    const userId = req.user?.id;
+
+    let studentData;
+    if (userRole === 'admin') {
+      studentData = await db.query(`
+        SELECT sd.*, 
+               s.full_name as student_name, s.email as student_email,
+               r.full_name as recruiter_name
+        FROM student_data sd
+        JOIN users s ON sd.student_id = s.id
+        JOIN users r ON sd.recruiter_id = r.id
+        ORDER BY sd.uploaded_at DESC
+      `);
+    } else if (userRole === 'student') {
+      studentData = await db.query(`
+        SELECT sd.*, r.full_name as recruiter_name
+        FROM student_data sd
+        JOIN users r ON sd.recruiter_id = r.id
+        WHERE sd.student_id = $1
+        ORDER BY sd.uploaded_at DESC
+      `, [userId]);
+    } else if (userRole === 'recruiter') {
+      studentData = await db.query(`
+        SELECT sd.*, s.full_name as student_name
+        FROM student_data sd
+        JOIN users s ON sd.student_id = s.id
+        WHERE sd.recruiter_id = $1
+        ORDER BY sd.uploaded_at DESC
+      `, [userId]);
+    } else {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    res.json(studentData.rows);
+  } catch (error) {
+    console.error('Student data fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch student data' });
+  }
+});
+
+// Upload student data (Recruiters only)
+app.post('/api/student-data', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    const recruiterId = req.user?.id;
+
+    if (userRole !== 'recruiter') {
+      return res.status(403).json({ error: 'Recruiter access required' });
+    }
+
+    const { student_id, company_name, application_date, status, notes, file_path } = req.body;
+
+    const result = await db.query(`
+      INSERT INTO student_data (student_id, recruiter_id, company_name, application_date, status, notes, file_path)
+      VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *
+    `, [student_id, recruiterId, company_name, application_date, status, notes, file_path]);
+
+    res.json({ message: 'Student data uploaded successfully', data: result.rows[0] });
+  } catch (error) {
+    console.error('Student data upload error:', error);
+    res.status(500).json({ error: 'Failed to upload student data' });
+  }
+});
+
+// Get trainer tasks
+app.get('/api/trainer-tasks', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    const userId = req.user?.id;
+
+    let tasks;
+    if (userRole === 'admin') {
+      tasks = await db.query(`
+        SELECT tt.*, 
+               t.full_name as trainer_name,
+               s.full_name as student_name
+        FROM trainer_tasks tt
+        JOIN users t ON tt.trainer_id = t.id
+        LEFT JOIN users s ON tt.student_id = s.id
+        ORDER BY tt.task_date DESC, tt.created_at DESC
+      `);
+    } else if (userRole === 'student') {
+      tasks = await db.query(`
+        SELECT tt.*, t.full_name as trainer_name
+        FROM trainer_tasks tt
+        JOIN users t ON tt.trainer_id = t.id
+        WHERE tt.student_id = $1
+        ORDER BY tt.task_date DESC, tt.created_at DESC
+      `, [userId]);
+    } else if (userRole === 'trainer') {
+      tasks = await db.query(`
+        SELECT tt.*, s.full_name as student_name
+        FROM trainer_tasks tt
+        LEFT JOIN users s ON tt.student_id = s.id
+        WHERE tt.trainer_id = $1
+        ORDER BY tt.task_date DESC, tt.created_at DESC
+      `, [userId]);
+    } else {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    res.json(tasks.rows);
+  } catch (error) {
+    console.error('Tasks fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch tasks' });
+  }
+});
+
+// Create trainer task (Trainers only)
+app.post('/api/trainer-tasks', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    const trainerId = req.user?.id;
+
+    if (userRole !== 'trainer') {
+      return res.status(403).json({ error: 'Trainer access required' });
+    }
+
+    const { student_id, title, description, task_date, due_date } = req.body;
+
+    const result = await db.query(`
+      INSERT INTO trainer_tasks (trainer_id, student_id, title, description, task_date, due_date)
+      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
+    `, [trainerId, student_id, title, description, task_date, due_date]);
+
+    res.json({ message: 'Task created successfully', task: result.rows[0] });
+  } catch (error) {
+    console.error('Task creation error:', error);
+    res.status(500).json({ error: 'Failed to create task' });
+  }
+});
+
+// Update task status (Students and Trainers)
+app.put('/api/trainer-tasks/:id', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    const userId = req.user?.id;
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Check if user has permission to update this task
+    const task = await db.query('SELECT * FROM trainer_tasks WHERE id = $1', [id]);
+    if (task.rowCount === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    const taskData = task.rows[0];
+    if (userRole === 'student' && taskData.student_id !== userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    if (userRole === 'trainer' && taskData.trainer_id !== userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const result = await db.query(
+      'UPDATE trainer_tasks SET status = $1 WHERE id = $2 RETURNING *',
+      [status, id]
+    );
+
+    res.json({ message: 'Task updated successfully', task: result.rows[0] });
+  } catch (error) {
+    console.error('Task update error:', error);
+    res.status(500).json({ error: 'Failed to update task' });
+  }
+});
+
+// Get interview calls (Students only)
+app.get('/api/interview-calls', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    const userId = req.user?.id;
+
+    if (userRole !== 'student' && userRole !== 'admin') {
+      return res.status(403).json({ error: 'Student or admin access required' });
+    }
+
+    let calls;
+    if (userRole === 'admin') {
+      calls = await db.query(`
+        SELECT ic.*, s.full_name as student_name
+        FROM interview_calls ic
+        JOIN users s ON ic.student_id = s.id
+        ORDER BY ic.interview_date DESC, ic.interview_time DESC
+      `);
+    } else {
+      calls = await db.query(`
+        SELECT * FROM interview_calls 
+        WHERE student_id = $1 
+        ORDER BY interview_date DESC, interview_time DESC
+      `, [userId]);
+    }
+
+    res.json(calls.rows);
+  } catch (error) {
+    console.error('Interview calls fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch interview calls' });
+  }
+});
+
+// Create interview call entry (Students only)
+app.post('/api/interview-calls', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    const studentId = req.user?.id;
+
+    if (userRole !== 'student') {
+      return res.status(403).json({ error: 'Student access required' });
+    }
+
+    const { company_name, contact_person, contact_number, interview_date, interview_time, interview_type, notes } = req.body;
+
+    const result = await db.query(`
+      INSERT INTO interview_calls (student_id, company_name, contact_person, contact_number, interview_date, interview_time, interview_type, notes)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *
+    `, [studentId, company_name, contact_person, contact_number, interview_date, interview_time, interview_type, notes]);
+
+    res.json({ message: 'Interview call entry created successfully', call: result.rows[0] });
+  } catch (error) {
+    console.error('Interview call creation error:', error);
+    res.status(500).json({ error: 'Failed to create interview call entry' });
   }
 });
 

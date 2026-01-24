@@ -31,8 +31,8 @@ RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
     echo 'nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
     chmod +x /docker-entrypoint.sh
 
-# Expose port 80
-EXPOSE 80
+# Expose port 8080
+EXPOSE 8080
 
 # Start nginx with runtime config injection
 CMD ["/docker-entrypoint.sh"]

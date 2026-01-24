@@ -17,6 +17,21 @@ function StudentDashboard() {
   const [newTask, setNewTask] = useState({ title: '', description: '', type: 'daily' });
   const [activeTab, setActiveTab] = useState('dashboard');
   
+  // Assignment-based Data State
+  const [assignments, setAssignments] = useState([]);
+  const [studentData, setStudentData] = useState([]);
+  const [trainerTasks, setTrainerTasks] = useState([]);
+  const [interviewCalls, setInterviewCalls] = useState([]);
+  const [newInterviewCall, setNewInterviewCall] = useState({
+    company_name: '',
+    contact_person: '',
+    contact_number: '',
+    interview_date: '',
+    interview_time: '',
+    interview_type: 'phone',
+    notes: ''
+  });
+  
   // Data Visualization State
   const [companyData, setCompanyData] = useState([]);
   const [visualizationData, setVisualizationData] = useState({
@@ -37,7 +52,133 @@ function StudentDashboard() {
     fetchUserProfile(token);
     fetchTasks();
     fetchVisualizationData();
+    fetchAssignments();
+    fetchStudentData();
+    fetchTrainerTasks();
+    fetchInterviewCalls();
   }, [navigate]);
+
+  const fetchAssignments = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const response = await fetch(`${backendUrl}/api/assignments`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAssignments(data);
+      }
+    } catch (error) {
+      console.error('Error fetching assignments:', error);
+    }
+  };
+
+  const fetchStudentData = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const response = await fetch(`${backendUrl}/api/student-data`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStudentData(data);
+      }
+    } catch (error) {
+      console.error('Error fetching student data:', error);
+    }
+  };
+
+  const fetchTrainerTasks = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const response = await fetch(`${backendUrl}/api/trainer-tasks`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTrainerTasks(data);
+      }
+    } catch (error) {
+      console.error('Error fetching trainer tasks:', error);
+    }
+  };
+
+  const fetchInterviewCalls = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const response = await fetch(`${backendUrl}/api/interview-calls`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setInterviewCalls(data);
+      }
+    } catch (error) {
+      console.error('Error fetching interview calls:', error);
+    }
+  };
+
+  const handleCreateInterviewCall = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const response = await fetch(`${backendUrl}/api/interview-calls`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newInterviewCall)
+      });
+
+      if (response.ok) {
+        alert('✅ Interview call entry created successfully!');
+        setNewInterviewCall({
+          company_name: '',
+          contact_person: '',
+          contact_number: '',
+          interview_date: '',
+          interview_time: '',
+          interview_type: 'phone',
+          notes: ''
+        });
+        fetchInterviewCalls();
+      } else {
+        alert('❌ Failed to create interview call entry');
+      }
+    } catch (error) {
+      console.error('Error creating interview call:', error);
+      alert('❌ Error creating interview call entry');
+    }
+  };
+
+  const handleTaskStatusUpdate = async (taskId, newStatus) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const response = await fetch(`${backendUrl}/api/trainer-tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (response.ok) {
+        alert(`✅ Task status updated to ${newStatus}!`);
+        fetchTrainerTasks();
+      } else {
+        alert('❌ Failed to update task status');
+      }
+    } catch (error) {
+      console.error('Error updating task status:', error);
+    }
+  };
 
   const fetchUserProfile = async (token) => {
     try {
@@ -251,7 +392,7 @@ function StudentDashboard() {
 
       {/* Navigation Tabs */}
       <div style={styles.tabContainer}>
-        {['dashboard', 'tasks', 'analytics', 'data'].map((tab) => (
+        {['dashboard', 'tasks', 'analytics', 'data', 'interviews'].map((tab) => (
           <button
             key={tab}
             style={{
@@ -264,6 +405,7 @@ function StudentDashboard() {
             {tab === 'tasks' && '📝 Task Management'}
             {tab === 'analytics' && '📈 Analytics'}
             {tab === 'data' && '💾 Data Hub'}
+            {tab === 'interviews' && '📞 Interviews'}
           </button>
         ))}
       </div>
@@ -274,6 +416,7 @@ function StudentDashboard() {
         {activeTab === 'tasks' && renderTaskManagement()}
         {activeTab === 'analytics' && renderAnalytics()}
         {activeTab === 'data' && renderDataHub()}
+        {activeTab === 'interviews' && renderInterviews()}
       </div>
     </div>
   );
@@ -284,32 +427,66 @@ function StudentDashboard() {
         {/* Stats Cards */}
         <div style={styles.statsGrid}>
           <div style={styles.statCard}>
-            <div style={styles.statIcon}>🎯</div>
+            <div style={styles.statIcon}>✅</div>
             <div style={styles.statInfo}>
-              <h3 style={styles.statNumber}>{visualizationData.completedTasks || 0}</h3>
+              <h3 style={styles.statNumber}>{trainerTasks.filter(t => t.status === 'completed').length}</h3>
               <p style={styles.statLabel}>Completed Tasks</p>
             </div>
           </div>
           <div style={styles.statCard}>
             <div style={styles.statIcon}>⏳</div>
             <div style={styles.statInfo}>
-              <h3 style={styles.statNumber}>{visualizationData.pendingTasks || 0}</h3>
+              <h3 style={styles.statNumber}>{trainerTasks.filter(t => t.status === 'pending').length}</h3>
               <p style={styles.statLabel}>Pending Tasks</p>
             </div>
           </div>
           <div style={styles.statCard}>
             <div style={styles.statIcon}>🏢</div>
             <div style={styles.statInfo}>
-              <h3 style={styles.statNumber}>{companyData.length}</h3>
-              <p style={styles.statLabel}>Company Connections</p>
+              <h3 style={styles.statNumber}>{studentData.length}</h3>
+              <p style={styles.statLabel}>Company Applications</p>
             </div>
           </div>
           <div style={styles.statCard}>
-            <div style={styles.statIcon}>📈</div>
+            <div style={styles.statIcon}>📞</div>
             <div style={styles.statInfo}>
-              <h3 style={styles.statNumber}>{taskHistory.length}</h3>
-              <p style={styles.statLabel}>Total Submissions</p>
+              <h3 style={styles.statNumber}>{interviewCalls.length}</h3>
+              <p style={styles.statLabel}>Interview Calls</p>
             </div>
+          </div>
+        </div>
+
+        {/* Assignment Status */}
+        <div style={styles.assignmentCard}>
+          <h3 style={styles.cardTitle}>👥 Your Assigned Team</h3>
+          <div style={styles.assignmentGrid}>
+            {assignments.filter(a => a.assigned_user_role === 'trainer').map(assignment => (
+              <div key={assignment.id} style={styles.assignmentItem}>
+                <div style={styles.assignmentIcon}>👨‍🏫</div>
+                <div>
+                  <div style={styles.assignmentName}>{assignment.assigned_user_name}</div>
+                  <div style={styles.assignmentRole}>Your Trainer</div>
+                </div>
+              </div>
+            ))}
+            {assignments.filter(a => a.assigned_user_role === 'recruiter').map(assignment => (
+              <div key={assignment.id} style={styles.assignmentItem}>
+                <div style={styles.assignmentIcon}>🏢</div>
+                <div>
+                  <div style={styles.assignmentName}>{assignment.assigned_user_name}</div>
+                  <div style={styles.assignmentRole}>Your Recruiter</div>
+                </div>
+              </div>
+            ))}
+            {assignments.length === 0 && (
+              <div style={styles.noAssignments}>
+                <div style={{fontSize: '24px', marginBottom: '10px'}}>👋</div>
+                <div>No team assigned yet</div>
+                <div style={{fontSize: '12px', color: '#666', marginTop: '5px'}}>
+                  Contact your admin to get assigned a trainer and recruiter
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -494,6 +671,228 @@ function StudentDashboard() {
               </div>
             )}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderInterviews() {
+    return (
+      <div style={styles.interviewsContainer}>
+        {/* Interview Call Entry Form */}
+        <div style={styles.interviewFormCard}>
+          <h3 style={styles.cardTitle}>📞 Add Interview Call Entry</h3>
+          <form onSubmit={(e) => { e.preventDefault(); handleCreateInterviewCall(); }}>
+            <div style={styles.formGrid}>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Company Name</label>
+                <input
+                  type="text"
+                  style={styles.formInput}
+                  value={newInterviewCall.company_name}
+                  onChange={(e) => setNewInterviewCall({ ...newInterviewCall, company_name: e.target.value })}
+                  placeholder="Enter company name..."
+                  required
+                />
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Contact Person</label>
+                <input
+                  type="text"
+                  style={styles.formInput}
+                  value={newInterviewCall.contact_person}
+                  onChange={(e) => setNewInterviewCall({ ...newInterviewCall, contact_person: e.target.value })}
+                  placeholder="HR/Interviewer name..."
+                />
+              </div>
+            </div>
+            
+            <div style={styles.formGrid}>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Contact Number</label>
+                <input
+                  type="tel"
+                  style={styles.formInput}
+                  value={newInterviewCall.contact_number}
+                  onChange={(e) => setNewInterviewCall({ ...newInterviewCall, contact_number: e.target.value })}
+                  placeholder="Phone number..."
+                />
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Interview Type</label>
+                <select
+                  style={styles.formSelect}
+                  value={newInterviewCall.interview_type}
+                  onChange={(e) => setNewInterviewCall({ ...newInterviewCall, interview_type: e.target.value })}
+                >
+                  <option value="phone">📱 Phone Call</option>
+                  <option value="video">💻 Video Call</option>
+                  <option value="in_person">🏢 In Person</option>
+                </select>
+              </div>
+            </div>
+            
+            <div style={styles.formGrid}>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Interview Date</label>
+                <input
+                  type="date"
+                  style={styles.formInput}
+                  value={newInterviewCall.interview_date}
+                  onChange={(e) => setNewInterviewCall({ ...newInterviewCall, interview_date: e.target.value })}
+                />
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Interview Time</label>
+                <input
+                  type="time"
+                  style={styles.formInput}
+                  value={newInterviewCall.interview_time}
+                  onChange={(e) => setNewInterviewCall({ ...newInterviewCall, interview_time: e.target.value })}
+                />
+              </div>
+            </div>
+            
+            <div style={styles.formGroup}>
+              <label style={styles.formLabel}>Additional Notes</label>
+              <textarea
+                style={styles.formTextarea}
+                value={newInterviewCall.notes}
+                onChange={(e) => setNewInterviewCall({ ...newInterviewCall, notes: e.target.value })}
+                placeholder="Interview preparation notes, questions to ask, etc..."
+                rows="3"
+              />
+            </div>
+            
+            <button type="submit" style={styles.submitBtn}>
+              📞 Add Interview Entry
+            </button>
+          </form>
+        </div>
+
+        {/* Interview Calls List */}
+        <div style={styles.interviewListCard}>
+          <h3 style={styles.cardTitle}>📋 Your Interview Schedule</h3>
+          {interviewCalls.length === 0 ? (
+            <div style={styles.emptyState}>
+              <div style={{fontSize: '48px', marginBottom: '15px'}}>📞</div>
+              <div style={{fontWeight: '600', marginBottom: '10px'}}>No interview calls scheduled</div>
+              <div style={{color: '#666', fontSize: '14px'}}>
+                Add your interview entries above to keep track of your calls
+              </div>
+            </div>
+          ) : (
+            <div style={styles.interviewGrid}>
+              {interviewCalls.map((call) => (
+                <div key={call.id} style={{
+                  ...styles.interviewCard,
+                  borderLeft: `4px solid ${
+                    call.status === 'completed' ? '#10b981' : 
+                    call.status === 'cancelled' ? '#ef4444' : 
+                    call.status === 'rescheduled' ? '#f59e0b' : '#3b82f6'
+                  }`
+                }}>
+                  <div style={styles.interviewHeader}>
+                    <div style={styles.companyName}>🏢 {call.company_name}</div>
+                    <div style={{
+                      ...styles.interviewStatus,
+                      backgroundColor: 
+                        call.status === 'completed' ? '#dcfce7' : 
+                        call.status === 'cancelled' ? '#fee2e2' : 
+                        call.status === 'rescheduled' ? '#fef3c7' : '#dbeafe',
+                      color: 
+                        call.status === 'completed' ? '#166534' : 
+                        call.status === 'cancelled' ? '#991b1b' : 
+                        call.status === 'rescheduled' ? '#92400e' : '#1e40af'
+                    }}>
+                      {call.status === 'scheduled' && '📅 Scheduled'}
+                      {call.status === 'completed' && '✅ Completed'}
+                      {call.status === 'cancelled' && '❌ Cancelled'}
+                      {call.status === 'rescheduled' && '🔄 Rescheduled'}
+                    </div>
+                  </div>
+                  
+                  {call.contact_person && (
+                    <div style={styles.contactPerson}>👤 {call.contact_person}</div>
+                  )}
+                  
+                  {call.contact_number && (
+                    <div style={styles.contactNumber}>📞 {call.contact_number}</div>
+                  )}
+                  
+                  <div style={styles.interviewDetails}>
+                    <div style={styles.interviewType}>
+                      {call.interview_type === 'phone' && '📱 Phone Interview'}
+                      {call.interview_type === 'video' && '💻 Video Interview'}
+                      {call.interview_type === 'in_person' && '🏢 In-Person Interview'}
+                    </div>
+                    
+                    {call.interview_date && (
+                      <div style={styles.interviewDateTime}>
+                        📅 {new Date(call.interview_date).toLocaleDateString()}
+                        {call.interview_time && ` at ${call.interview_time}`}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {call.notes && (
+                    <div style={styles.interviewNotes}>
+                      📝 <em>{call.notes}</em>
+                    </div>
+                  )}
+                  
+                  <div style={styles.interviewCreated}>
+                    Added: {new Date(call.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Recruiter Shared Data */}
+        <div style={styles.recruiterDataCard}>
+          <h3 style={styles.cardTitle}>🏢 Data from Your Recruiter</h3>
+          {studentData.length === 0 ? (
+            <div style={styles.emptyState}>
+              <div style={{fontSize: '48px', marginBottom: '15px'}}>📊</div>
+              <div style={{fontWeight: '600', marginBottom: '10px'}}>No recruiter data yet</div>
+              <div style={{color: '#666', fontSize: '14px'}}>
+                Your assigned recruiter will share Excel data about companies and applications
+              </div>
+            </div>
+          ) : (
+            <div style={styles.recruiterDataList}>
+              {studentData.map((data) => (
+                <div key={data.id} style={styles.recruiterDataItem}>
+                  <div style={styles.dataHeader}>
+                    <div style={styles.companyName}>🏢 {data.company_name}</div>
+                    <div style={styles.dataDate}>
+                      📅 {new Date(data.application_date).toLocaleDateString()}
+                    </div>
+                  </div>
+                  
+                  <div style={{
+                    ...styles.dataStatus,
+                    color: data.status?.toLowerCase() === 'selected' ? '#166534' :
+                           data.status?.toLowerCase() === 'rejected' ? '#991b1b' : '#92400e'
+                  }}>
+                    Status: {data.status}
+                  </div>
+                  
+                  {data.notes && (
+                    <div style={styles.dataNotes}>
+                      📝 {data.notes}
+                    </div>
+                  )}
+                  
+                  <div style={styles.dataFooter}>
+                    Shared by recruiter • {new Date(data.uploaded_at).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1648,6 +2047,223 @@ const styles = {
     fontSize: '12px',
     fontWeight: '600',
     cursor: 'pointer'
+  },
+
+  // Assignment styles
+  assignmentCard: {
+    background: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '16px',
+    padding: '24px',
+    border: '1px solid rgba(255, 255, 255, 0.2)'
+  },
+  assignmentGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '16px'
+  },
+  assignmentItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '16px',
+    background: '#f8fafc',
+    borderRadius: '12px',
+    border: '1px solid #e2e8f0'
+  },
+  assignmentIcon: {
+    fontSize: '24px'
+  },
+  assignmentName: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#1e293b',
+    margin: '0 0 4px 0'
+  },
+  assignmentRole: {
+    fontSize: '12px',
+    color: '#64748b',
+    margin: 0
+  },
+  noAssignments: {
+    gridColumn: '1 / -1',
+    textAlign: 'center',
+    padding: '32px',
+    color: '#6b7280'
+  },
+
+  // Trainer tasks styles
+  trainerTasksCard: {
+    background: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '16px',
+    padding: '24px',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    marginBottom: '24px'
+  },
+  trainerTasksList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px'
+  },
+  taskCard: {
+    background: '#f8fafc',
+    borderRadius: '12px',
+    padding: '20px'
+  },
+  taskStatus: {
+    padding: '4px 12px',
+    borderRadius: '20px',
+    fontSize: '12px',
+    fontWeight: '600'
+  },
+  taskDetails: {
+    display: 'flex',
+    gap: '16px',
+    margin: '12px 0'
+  },
+  taskActions: {
+    display: 'flex',
+    gap: '8px',
+    marginTop: '16px'
+  },
+  taskActionBtn: {
+    padding: '8px 16px',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '12px',
+    fontWeight: '600',
+    cursor: 'pointer'
+  },
+
+  // Interview styles
+  interviewsContainer: {
+    display: 'grid',
+    gap: '24px'
+  },
+  interviewFormCard: {
+    background: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '16px',
+    padding: '32px',
+    border: '1px solid rgba(255, 255, 255, 0.2)'
+  },
+  interviewListCard: {
+    background: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '16px',
+    padding: '24px',
+    border: '1px solid rgba(255, 255, 255, 0.2)'
+  },
+  formGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '20px'
+  },
+  interviewGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+    gap: '16px'
+  },
+  interviewCard: {
+    background: '#f8fafc',
+    borderRadius: '12px',
+    padding: '20px'
+  },
+  interviewHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: '12px'
+  },
+  interviewStatus: {
+    padding: '4px 12px',
+    borderRadius: '20px',
+    fontSize: '12px',
+    fontWeight: '600'
+  },
+  contactPerson: {
+    fontSize: '14px',
+    color: '#374151',
+    marginBottom: '8px'
+  },
+  contactNumber: {
+    fontSize: '14px',
+    color: '#374151',
+    marginBottom: '12px'
+  },
+  interviewDetails: {
+    marginBottom: '12px'
+  },
+  interviewType: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#6366f1',
+    marginBottom: '4px'
+  },
+  interviewDateTime: {
+    fontSize: '14px',
+    color: '#374151'
+  },
+  interviewNotes: {
+    fontSize: '13px',
+    color: '#6b7280',
+    marginBottom: '12px',
+    fontStyle: 'italic'
+  },
+  interviewCreated: {
+    fontSize: '11px',
+    color: '#9ca3af',
+    borderTop: '1px solid #e5e7eb',
+    paddingTop: '8px'
+  },
+
+  // Recruiter data styles
+  recruiterDataCard: {
+    background: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '16px',
+    padding: '24px',
+    border: '1px solid rgba(255, 255, 255, 0.2)'
+  },
+  recruiterDataList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px'
+  },
+  recruiterDataItem: {
+    background: '#f8fafc',
+    borderRadius: '12px',
+    padding: '20px',
+    border: '1px solid #e2e8f0'
+  },
+  dataHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '12px'
+  },
+  dataDate: {
+    fontSize: '12px',
+    color: '#6b7280'
+  },
+  dataStatus: {
+    fontSize: '14px',
+    fontWeight: '600',
+    marginBottom: '8px'
+  },
+  dataNotes: {
+    fontSize: '13px',
+    color: '#6b7280',
+    marginBottom: '12px',
+    fontStyle: 'italic'
+  },
+  dataFooter: {
+    fontSize: '11px',
+    color: '#9ca3af',
+    borderTop: '1px solid #e5e7eb',
+    paddingTop: '8px'
   }
 };
 
