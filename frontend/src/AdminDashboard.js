@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import EnhancedUserManagement from './EnhancedUserManagement';
 
 export default function AdminDashboard() {
   const [applications, setApplications] = useState([]);
@@ -271,97 +272,106 @@ export default function AdminDashboard() {
     }
   };
 
-  // User Management Functions
+  // Enhanced User Management Functions
   const handleCreateUser = async () => {
-    console.log('🔥 CREATE USER BUTTON CLICKED!');
-    console.log('📋 Form state:', userForm);
-    console.log('📋 Required fields check:', {
-      name: !!userForm.name,
-      email: !!userForm.email,
-      role: !!userForm.role,
-      nameValue: userForm.name,
-      emailValue: userForm.email,
-      roleValue: userForm.role
-    });
+    console.log('🚀 CREATING USER - ENHANCED VERSION');
+    console.log('Form Data:', userForm);
     
-    if (!userForm.name || !userForm.email || !userForm.role) {
-      console.log('⚠️ Validation failed:', { name: !!userForm.name, email: !!userForm.email, role: !!userForm.role });
-      alert('⚠️ Please fill in all required fields: Name, Email, and Role are mandatory.');
+    // Validation
+    if (!userForm.name?.trim() || !userForm.email?.trim() || !userForm.role) {
+      alert('❌ Please fill in all required fields:\n• Name\n• Email\n• Role');
       return;
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(userForm.email)) {
-      console.log('⚠️ Email validation failed:', userForm.email);
-      alert('⚠️ Please enter a valid email address.');
+    if (!emailRegex.test(userForm.email.trim())) {
+      alert('❌ Please enter a valid email address');
       return;
     }
 
     try {
       const token = localStorage.getItem('auth_token');
       if (!token) {
-        alert('❌ Authentication required. Please log in again.');
-        console.error('No auth token found in localStorage');
+        alert('❌ Please log in as admin first');
         return;
       }
-      
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || (
-        window.location.hostname === 'localhost' 
-          ? 'http://localhost:8080' 
-          : 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app'
-      );
-      console.log('🔍 Debug Info:');
-      console.log('- Backend URL:', backendUrl);
-      console.log('- Token exists:', !!token);
-      console.log('- Token preview:', token.substring(0, 20) + '...');
-      console.log('- User form data:', userForm);
-      console.log('Creating user at:', `${backendUrl}/api/users`);
 
-      const requestBody = {
-        name: userForm.name,
-        email: userForm.email,
-        phone: userForm.phone,
+      // Always use localhost for development
+      const backendUrl = 'http://localhost:8080';
+      console.log('Backend URL:', backendUrl);
+
+      const userData = {
+        name: userForm.name.trim(),
+        email: userForm.email.trim().toLowerCase(),
+        phone: userForm.phone?.trim() || '',
         role: userForm.role
       };
-      console.log('Request body:', requestBody);
+      
+      console.log('Sending user data:', userData);
 
-      const res = await fetch(`${backendUrl}/api/users`, {
+      const response = await fetch(`${backendUrl}/api/users`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(userData)
       });
 
-      console.log('Response status:', res.status);
-      console.log('Response headers:', [...res.headers.entries()]);
-
-      if (res.ok) {
-        const result = await res.json();
-        console.log('✅ User created successfully:', result);
+      console.log('Response status:', response.status);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ User created:', result);
         
-        alert(`✅ Corporate User Account Created Successfully!\n\n👤 User Details:\n• Name: ${userForm.name}\n• Email: ${userForm.email}\n• Role: ${userForm.role.charAt(0).toUpperCase() + userForm.role.slice(1)}\n• Phone: ${userForm.phone || 'Not provided'}\n\n🔐 Account Credentials:\n• Login URL: https://rrcloud-frontend-nsmgws4u4a-uc.a.run.app/login\n• Email: ${userForm.email}\n• Default Password: password123\n\n📧 Welcome email sent to user with complete login instructions.\n\n⚠️ User will be prompted to change password on first login for security.`);
+        alert(`✅ USER CREATED SUCCESSFULLY!\n\n👤 User: ${userData.name}\n📧 Email: ${userData.email}\n🎭 Role: ${userData.role.toUpperCase()}\n📞 Phone: ${userData.phone || 'Not provided'}\n\n🔑 Default Password: password123\n\n✉️ Welcome email sent!`);
         
-        setShowUserModal(false);
+        // Reset form and close modal
         setUserForm({ name: '', email: '', phone: '', role: 'student' });
+        setShowUserModal(false);
+        
+        // Reload users list
         loadUsers();
       } else {
-        const errorText = await res.text();
-        let errorMessage;
-        try {
-          const error = JSON.parse(errorText);
-          errorMessage = error.error || error.message || 'Failed to create user';
-        } catch {
-          errorMessage = `HTTP ${res.status}: ${res.statusText}`;
-        }
-        console.error('User creation failed:', errorMessage);
-        alert(`❌ User Creation Failed\n\nError: ${errorMessage}\n\nPlease check:\n• Email address is not already registered\n• All required fields are filled\n• You have admin permissions`);
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('❌ Error:', errorData);
+        alert(`❌ Failed to create user:\n\n${errorData.error || errorData.message || 'Unknown error'}`);
       }
-    } catch (err) {
-      console.error('Error creating user:', err);
-      alert(`❌ Network Error\n\nFailed to create user: ${err.message}\n\nPlease check your internet connection and try again.`);
+    } catch (error) {
+      console.error('❌ Network error:', error);
+      alert(`❌ Network Error:\n\n${error.message}\n\nPlease check if backend is running on port 8080`);
+    }
+  };
+
+  // User Assignment Function
+  const handleAssignUserToStudent = async (studentId, assigneeId, assigneeRole) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = 'http://localhost:8080';
+      
+      const response = await fetch(`${backendUrl}/api/assignments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          student_id: studentId,
+          assigned_user_id: assigneeId,
+          assigned_user_role: assigneeRole
+        })
+      });
+
+      if (response.ok) {
+        alert(`✅ ${assigneeRole.toUpperCase()} assigned to student successfully!`);
+        loadUsers(); // Refresh the list
+      } else {
+        const error = await response.json();
+        alert(`❌ Assignment failed: ${error.error}`);
+      }
+    } catch (error) {
+      alert(`❌ Error: ${error.message}`);
     }
   };
 
@@ -1477,6 +1487,12 @@ ZgenAI Team`;
               >
                 Assignments ({assignments.length})
               </button>
+              <button 
+                style={styles.tab(activeTab === 'enhanced-users')}
+                onClick={() => setActiveTab('enhanced-users')}
+              >
+                🚀 Enhanced User Mgmt
+              </button>
             </div>
 
             {/* TAB CONTENT */}
@@ -1486,6 +1502,7 @@ ZgenAI Team`;
               {activeTab === 'rejected' && renderApplicationsTable(rejected, 'rejected')}
               {activeTab === 'users' && renderUserManagement()}
               {activeTab === 'assignments' && renderAssignmentManagement()}
+              {activeTab === 'enhanced-users' && <EnhancedUserManagement />}
             </div>
           </div>
         )}
