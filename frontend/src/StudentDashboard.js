@@ -43,6 +43,74 @@ function StudentDashboard() {
   const [csvData, setCsvData] = useState([]);
   const [uploadFile, setUploadFile] = useState(null);
 
+  // Gmail State
+  const [emails, setEmails] = useState([
+    {
+      id: 1,
+      sender: 'hr@techcorp.com',
+      subject: 'Interview Invitation - Software Engineer Position',
+      preview: 'We are pleased to invite you for an interview...',
+      time: '2 hours ago',
+      read: false,
+      important: true,
+      category: 'interview',
+      applicationId: 'APP001'
+    },
+    {
+      id: 2,
+      sender: 'careers@innovatetech.com',
+      subject: 'Application Status Update',
+      preview: 'Thank you for your application. We have reviewed...',
+      time: '1 day ago',
+      read: true,
+      important: false,
+      category: 'application',
+      applicationId: 'APP002'
+    },
+    {
+      id: 3,
+      sender: 'trainer@zgenai.com',
+      subject: 'Assignment Deadline Reminder - React Project',
+      preview: 'This is a reminder that your React assignment is due...',
+      time: '6 hours ago',
+      read: false,
+      important: true,
+      category: 'assignment',
+      assignmentId: 'ASG001'
+    },
+    {
+      id: 4,
+      sender: 'noreply@jobplatform.com',
+      subject: 'New Job Matches Available',
+      preview: 'Based on your profile, we found 5 new job opportunities...',
+      time: '3 days ago',
+      read: true,
+      important: false,
+      category: 'opportunity',
+      applicationId: null
+    },
+    {
+      id: 5,
+      sender: 'interview@startupxyz.com',
+      subject: 'Technical Interview Scheduled - Full Stack Developer',
+      preview: 'Your technical interview has been scheduled for tomorrow...',
+      time: '1 hour ago',
+      read: false,
+      important: true,
+      category: 'interview',
+      applicationId: 'APP003'
+    }
+  ]);
+  const [selectedEmail, setSelectedEmail] = useState(null);
+  const [composing, setComposing] = useState(false);
+  const [emailFilter, setEmailFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [newEmail, setNewEmail] = useState({
+    to: '',
+    subject: '',
+    body: ''
+  });
+
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
     if (!token) {
@@ -1016,44 +1084,6 @@ function StudentDashboard() {
   }
 
   function renderGmail() {
-    const [emails, setEmails] = useState([
-      {
-        id: 1,
-        sender: 'hr@techcorp.com',
-        subject: 'Interview Invitation - Software Engineer Position',
-        preview: 'We are pleased to invite you for an interview...',
-        time: '2 hours ago',
-        read: false,
-        important: true
-      },
-      {
-        id: 2,
-        sender: 'careers@innovatetech.com',
-        subject: 'Application Status Update',
-        preview: 'Thank you for your application. We have reviewed...',
-        time: '1 day ago',
-        read: true,
-        important: false
-      },
-      {
-        id: 3,
-        sender: 'noreply@jobplatform.com',
-        subject: 'New Job Matches Available',
-        preview: 'Based on your profile, we found 5 new job opportunities...',
-        time: '3 days ago',
-        read: true,
-        important: false
-      }
-    ]);
-    
-    const [selectedEmail, setSelectedEmail] = useState(null);
-    const [composing, setComposing] = useState(false);
-    const [newEmail, setNewEmail] = useState({
-      to: '',
-      subject: '',
-      body: ''
-    });
-
     const handleMarkAsRead = (emailId) => {
       setEmails(prev => prev.map(email => 
         email.id === emailId ? { ...email, read: true } : email
@@ -1067,6 +1097,35 @@ function StudentDashboard() {
       setNewEmail({ to: '', subject: '', body: '' });
     };
 
+    const filteredEmails = emails.filter(email => {
+      const matchesFilter = emailFilter === 'all' || email.category === emailFilter;
+      const matchesSearch = searchTerm === '' || 
+        email.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        email.sender.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        email.preview.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesFilter && matchesSearch;
+    });
+
+    const getCategoryIcon = (category) => {
+      switch(category) {
+        case 'interview': return '🎯';
+        case 'application': return '📋';
+        case 'assignment': return '📚';
+        case 'opportunity': return '💼';
+        default: return '📧';
+      }
+    };
+
+    const getCategoryColor = (category) => {
+      switch(category) {
+        case 'interview': return '#ef4444';
+        case 'application': return '#3b82f6';
+        case 'assignment': return '#f59e0b';
+        case 'opportunity': return '#10b981';
+        default: return '#6b7280';
+      }
+    };
+
     return (
       <div style={styles.gmailContainer}>
         <div style={styles.gmailHeader}>
@@ -1077,6 +1136,70 @@ function StudentDashboard() {
           >
             ✉️ Compose
           </button>
+        </div>
+
+        {/* Search and Filter Bar */}
+        <div style={styles.searchFilterBar}>
+          <div style={styles.searchContainer}>
+            <input
+              type="text"
+              placeholder="🔍 Search emails..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={styles.searchInput}
+            />
+          </div>
+          
+          <div style={styles.filterContainer}>
+            <span style={styles.filterLabel}>Filter by:</span>
+            {['all', 'interview', 'application', 'assignment', 'opportunity'].map(filter => (
+              <button
+                key={filter}
+                onClick={() => setEmailFilter(filter)}
+                style={{
+                  ...styles.filterBtn,
+                  ...(emailFilter === filter ? styles.filterBtnActive : {})
+                }}
+              >
+                {filter === 'all' ? '📧 All' : `${getCategoryIcon(filter)} ${filter.charAt(0).toUpperCase() + filter.slice(1)}`}
+                <span style={styles.filterCount}>
+                  ({filter === 'all' ? emails.length : emails.filter(e => e.category === filter).length})
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Category Stats */}
+        <div style={styles.categoryStats}>
+          <div style={styles.statCard}>
+            <span style={styles.statIcon}>🎯</span>
+            <div style={styles.statInfo}>
+              <span style={styles.statNumber}>{emails.filter(e => e.category === 'interview').length}</span>
+              <span style={styles.statLabel}>Interviews</span>
+            </div>
+          </div>
+          <div style={styles.statCard}>
+            <span style={styles.statIcon}>📋</span>
+            <div style={styles.statInfo}>
+              <span style={styles.statNumber}>{emails.filter(e => e.category === 'application').length}</span>
+              <span style={styles.statLabel}>Applications</span>
+            </div>
+          </div>
+          <div style={styles.statCard}>
+            <span style={styles.statIcon}>📚</span>
+            <div style={styles.statInfo}>
+              <span style={styles.statNumber}>{emails.filter(e => e.category === 'assignment').length}</span>
+              <span style={styles.statLabel}>Assignments</span>
+            </div>
+          </div>
+          <div style={styles.statCard}>
+            <span style={styles.statIcon}>💼</span>
+            <div style={styles.statInfo}>
+              <span style={styles.statNumber}>{emails.filter(e => e.category === 'opportunity').length}</span>
+              <span style={styles.statLabel}>Opportunities</span>
+            </div>
+          </div>
         </div>
 
         {composing && (
@@ -1171,44 +1294,66 @@ function StudentDashboard() {
             </div>
           ) : (
             <div style={styles.inbox}>
-              <h3 style={styles.inboxTitle}>📬 Inbox ({emails.filter(e => !e.read).length} unread)</h3>
+              <h3 style={styles.inboxTitle}>
+                📬 {emailFilter === 'all' ? 'All Emails' : `${emailFilter.charAt(0).toUpperCase() + emailFilter.slice(1)} Emails`} 
+                ({filteredEmails.filter(e => !e.read).length} unread)
+              </h3>
               
-              {emails.map(email => (
-                <div 
-                  key={email.id} 
-                  style={{
-                    ...styles.emailItem,
-                    backgroundColor: email.read ? '#fff' : '#f0f9ff',
-                    fontWeight: email.read ? 'normal' : 'bold'
-                  }}
-                  onClick={() => {
-                    setSelectedEmail(email);
-                    handleMarkAsRead(email.id);
-                  }}
-                >
-                  <div style={styles.emailItemHeader}>
-                    <div style={styles.emailSender}>
-                      {email.important && <span style={styles.importantFlag}>⭐</span>}
-                      {email.sender}
-                    </div>
-                    <div style={styles.emailTime}>{email.time}</div>
-                  </div>
-                  
-                  <div style={styles.emailSubjectLine}>{email.subject}</div>
-                  <div style={styles.emailPreview}>{email.preview}</div>
-                  
-                  {!email.read && <div style={styles.unreadIndicator}>●</div>}
+              {filteredEmails.length === 0 ? (
+                <div style={styles.noEmailsFound}>
+                  <div style={styles.noEmailsIcon}>📭</div>
+                  <p>No emails found matching your criteria</p>
+                  <p style={styles.noEmailsHint}>Try adjusting your search or filter settings</p>
                 </div>
-              ))}
+              ) : (
+                filteredEmails.map(email => (
+                  <div 
+                    key={email.id} 
+                    style={{
+                      ...styles.emailItem,
+                      backgroundColor: email.read ? '#fff' : '#f0f9ff',
+                      fontWeight: email.read ? 'normal' : 'bold',
+                      borderLeft: `4px solid ${getCategoryColor(email.category)}`
+                    }}
+                    onClick={() => {
+                      setSelectedEmail(email);
+                      handleMarkAsRead(email.id);
+                    }}
+                  >
+                    <div style={styles.emailItemHeader}>
+                      <div style={styles.emailSender}>
+                        <span style={{...styles.categoryBadge, backgroundColor: getCategoryColor(email.category)}}>
+                          {getCategoryIcon(email.category)}
+                        </span>
+                        {email.important && <span style={styles.importantFlag}>⭐</span>}
+                        {email.sender}
+                      </div>
+                      <div style={styles.emailTime}>{email.time}</div>
+                    </div>
+                    
+                    <div style={styles.emailSubjectLine}>{email.subject}</div>
+                    <div style={styles.emailPreview}>{email.preview}</div>
+                    
+                    {email.applicationId && (
+                      <div style={styles.emailMeta}>
+                        <span style={styles.applicationId}>🔗 {email.applicationId}</span>
+                      </div>
+                    )}
+                    
+                    {!email.read && <div style={styles.unreadIndicator}>●</div>}
+                  </div>
+                ))
+              )}
             </div>
           )}
         </div>
 
         <div style={styles.gmailFooter}>
           <div style={styles.gmailStats}>
-            <span>📊 {emails.length} emails total</span>
-            <span>📬 {emails.filter(e => !e.read).length} unread</span>
-            <span>⭐ {emails.filter(e => e.important).length} important</span>
+            <span>📊 {filteredEmails.length} emails shown</span>
+            <span>📬 {filteredEmails.filter(e => !e.read).length} unread</span>
+            <span>⭐ {filteredEmails.filter(e => e.important).length} important</span>
+            {searchTerm && <span>🔍 Search: "{searchTerm}"</span>}
           </div>
         </div>
       </div>
@@ -2727,6 +2872,134 @@ const styles = {
     justifyContent: 'space-around',
     fontSize: '14px',
     color: '#6b7280'
+  },
+
+  // Search and Filter Styles
+  searchFilterBar: {
+    background: 'white',
+    padding: '16px',
+    borderRadius: '12px',
+    marginBottom: '16px',
+    border: '1px solid #e5e7eb',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+  searchContainer: {
+    flex: 1
+  },
+  searchInput: {
+    width: '100%',
+    padding: '10px 12px',
+    border: '2px solid #e5e7eb',
+    borderRadius: '8px',
+    fontSize: '14px',
+    transition: 'border-color 0.3s ease',
+    boxSizing: 'border-box'
+  },
+  filterContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'wrap'
+  },
+  filterLabel: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#374151',
+    marginRight: '8px'
+  },
+  filterBtn: {
+    padding: '6px 12px',
+    border: '1px solid #e5e7eb',
+    borderRadius: '20px',
+    background: 'white',
+    fontSize: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px'
+  },
+  filterBtnActive: {
+    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+    color: 'white',
+    border: '1px solid #3b82f6'
+  },
+  filterCount: {
+    fontSize: '11px',
+    opacity: 0.8
+  },
+
+  // Category Stats
+  categoryStats: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+    gap: '12px',
+    marginBottom: '16px'
+  },
+  statCard: {
+    background: 'white',
+    padding: '12px',
+    borderRadius: '8px',
+    border: '1px solid #e5e7eb',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px'
+  },
+  statIcon: {
+    fontSize: '20px'
+  },
+  statInfo: {
+    display: 'flex',
+    flexDirection: 'column'
+  },
+  statNumber: {
+    fontSize: '18px',
+    fontWeight: '700',
+    color: '#1f2937'
+  },
+  statLabel: {
+    fontSize: '12px',
+    color: '#6b7280',
+    textTransform: 'capitalize'
+  },
+
+  // Enhanced Email Styles
+  categoryBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '20px',
+    height: '20px',
+    borderRadius: '50%',
+    fontSize: '10px',
+    color: 'white',
+    marginRight: '8px'
+  },
+  applicationId: {
+    fontSize: '11px',
+    color: '#6b7280',
+    fontStyle: 'italic'
+  },
+  emailMeta: {
+    marginTop: '8px',
+    paddingTop: '8px',
+    borderTop: '1px solid #f3f4f6'
+  },
+  noEmailsFound: {
+    textAlign: 'center',
+    padding: '40px 20px',
+    color: '#6b7280'
+  },
+  noEmailsIcon: {
+    fontSize: '48px',
+    marginBottom: '12px'
+  },
+  noEmailsHint: {
+    fontSize: '12px',
+    color: '#9ca3af',
+    fontStyle: 'italic'
   }
 };
 
