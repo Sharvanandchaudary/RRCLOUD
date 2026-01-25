@@ -82,9 +82,13 @@ export default function AdminDashboard() {
   };
 
   const handleCreateAssignment = async () => {
+    console.log('🔥 CREATE ASSIGNMENT BUTTON CLICKED!');
+    console.log('📋 Assignment form state:', assignmentForm);
+    
     try {
       const token = localStorage.getItem('auth_token');
       if (!token) {
+        console.log('❌ No token found in localStorage');
         alert('❌ Please login to create assignments');
         console.error('No auth token found for assignment creation');
         return;
@@ -96,7 +100,11 @@ export default function AdminDashboard() {
         return;
       }
 
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || (
+        window.location.hostname === 'localhost' 
+          ? 'http://localhost:8080' 
+          : 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app'
+      );
       console.log('🔍 Assignment Debug Info:');
       console.log('- Backend URL:', backendUrl);
       console.log('- Token exists:', !!token);
@@ -265,7 +273,11 @@ export default function AdminDashboard() {
 
   // User Management Functions
   const handleCreateUser = async () => {
+    console.log('🔥 CREATE USER BUTTON CLICKED!');
+    console.log('📋 Form state:', userForm);
+    
     if (!userForm.name || !userForm.email || !userForm.role) {
+      console.log('⚠️ Validation failed:', { name: !!userForm.name, email: !!userForm.email, role: !!userForm.role });
       alert('⚠️ Please fill in all required fields: Name, Email, and Role are mandatory.');
       return;
     }
@@ -285,7 +297,11 @@ export default function AdminDashboard() {
         return;
       }
       
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || (
+        window.location.hostname === 'localhost' 
+          ? 'http://localhost:8080' 
+          : 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app'
+      );
       console.log('🔍 Debug Info:');
       console.log('- Backend URL:', backendUrl);
       console.log('- Token exists:', !!token);
