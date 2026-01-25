@@ -19,7 +19,7 @@ export default function StudentSignup() {
 
     try {
       // Get backend URL from runtime config or fall back to relative path
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const apiUrl = backendUrl ? `${backendUrl}/api/applications` : '/api/applications';
       
       const response = await fetch(apiUrl, {

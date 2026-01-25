@@ -105,10 +105,80 @@ function StudentDashboard() {
   const [composing, setComposing] = useState(false);
   const [emailFilter, setEmailFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [gmailAuthenticated, setGmailAuthenticated] = useState(false);
   const [newEmail, setNewEmail] = useState({
     to: '',
     subject: '',
     body: ''
+  });
+
+  // Calendar State
+  const [calendarEvents, setCalendarEvents] = useState([
+    {
+      id: 1,
+      title: 'Technical Interview - Google',
+      date: '2026-01-26',
+      time: '14:00',
+      type: 'interview',
+      description: 'Virtual interview with senior engineers'
+    },
+    {
+      id: 2,
+      title: 'Assignment Due: React Dashboard',
+      date: '2026-01-28',
+      time: '23:59',
+      type: 'assignment',
+      description: 'Submit completed React dashboard project'
+    },
+    {
+      id: 3,
+      title: 'Career Workshop',
+      date: '2026-01-30',
+      time: '10:00',
+      type: 'workshop',
+      description: 'Resume building and interview prep'
+    }
+  ]);
+
+  // Application History State
+  const [applicationHistory, setApplicationHistory] = useState([
+    {
+      id: 1,
+      company: 'Google Inc.',
+      position: 'Software Engineer',
+      status: 'In Review',
+      appliedDate: '2026-01-20',
+      lastUpdate: '2026-01-24',
+      stage: 'Technical Interview'
+    },
+    {
+      id: 2,
+      company: 'Microsoft',
+      position: 'Frontend Developer',
+      status: 'Pending',
+      appliedDate: '2026-01-18',
+      lastUpdate: '2026-01-22',
+      stage: 'Initial Screening'
+    },
+    {
+      id: 3,
+      company: 'Apple',
+      position: 'iOS Developer',
+      status: 'Rejected',
+      appliedDate: '2026-01-15',
+      lastUpdate: '2026-01-20',
+      stage: 'Application Review'
+    }
+  ]);
+
+  // Task Submission State
+  const [taskSubmissions, setTaskSubmissions] = useState([]);
+  const [newTaskSubmission, setNewTaskSubmission] = useState({
+    title: '',
+    description: '',
+    file: null,
+    dueDate: '',
+    priority: 'medium'
   });
 
   useEffect(() => {
@@ -460,7 +530,7 @@ function StudentDashboard() {
 
       {/* Navigation Tabs */}
       <div style={styles.tabContainer}>
-        {['dashboard', 'tasks', 'analytics', 'data', 'interviews', 'gmail'].map((tab) => (
+        {['dashboard', 'tasks', 'submit-task', 'interviews', 'analytics', 'applications', 'calendar', 'gmail', 'data', 'history'].map((tab) => (
           <button
             key={tab}
             style={{
@@ -471,8 +541,14 @@ function StudentDashboard() {
           >
             {tab === 'dashboard' && '📊 Dashboard'}
             {tab === 'tasks' && '📝 Task Management'}
+            {tab === 'submit-task' && '📤 Submit Task'}
+            {tab === 'interviews' && '🎯 Interviews'}
             {tab === 'analytics' && '📈 Analytics'}
+            {tab === 'applications' && '📄 Applications'}
+            {tab === 'calendar' && '📅 Calendar'}
+            {tab === 'gmail' && '📧 Gmail'}
             {tab === 'data' && '💾 Data Hub'}
+            {tab === 'history' && '📚 History'}
             {tab === 'interviews' && '📞 Interviews'}
             {tab === 'gmail' && '📧 Gmail'}
           </button>
@@ -483,10 +559,14 @@ function StudentDashboard() {
       <div style={styles.mainContent}>
         {activeTab === 'dashboard' && renderDashboard()}
         {activeTab === 'tasks' && renderTaskManagement()}
-        {activeTab === 'analytics' && renderAnalytics()}
-        {activeTab === 'data' && renderDataHub()}
+        {activeTab === 'submit-task' && renderTaskSubmission()}
         {activeTab === 'interviews' && renderInterviews()}
+        {activeTab === 'analytics' && renderAnalytics()}
+        {activeTab === 'applications' && renderApplicationHistory()}
+        {activeTab === 'calendar' && renderCalendar()}
         {activeTab === 'gmail' && renderGmail()}
+        {activeTab === 'data' && renderDataHub()}
+        {activeTab === 'history' && renderHistory()}
       </div>
     </div>
   );
@@ -1354,6 +1434,347 @@ function StudentDashboard() {
             <span>📬 {filteredEmails.filter(e => !e.read).length} unread</span>
             <span>⭐ {filteredEmails.filter(e => e.important).length} important</span>
             {searchTerm && <span>🔍 Search: "{searchTerm}"</span>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderTaskSubmission() {
+    const handleTaskSubmit = async () => {
+      if (!newTaskSubmission.title || !newTaskSubmission.description) {
+        alert('Please fill in title and description');
+        return;
+      }
+
+      const submission = {
+        id: Date.now(),
+        ...newTaskSubmission,
+        submittedAt: new Date().toISOString(),
+        status: 'pending'
+      };
+
+      setTaskSubmissions(prev => [...prev, submission]);
+      setNewTaskSubmission({
+        title: '',
+        description: '',
+        file: null,
+        dueDate: '',
+        priority: 'medium'
+      });
+
+      alert('✅ Task submitted successfully!');
+    };
+
+    return (
+      <div style={styles.taskSubmissionContainer}>
+        <div style={styles.pageHeader}>
+          <h2 style={styles.pageTitle}>📤 Submit Task</h2>
+          <p style={styles.pageDescription}>Submit your assignments and projects</p>
+        </div>
+
+        <div style={styles.submissionForm}>
+          <div style={styles.formSection}>
+            <h3 style={styles.sectionTitle}>Task Details</h3>
+            
+            <div style={styles.formGroup}>
+              <label style={styles.formLabel}>Task Title *</label>
+              <input
+                type="text"
+                value={newTaskSubmission.title}
+                onChange={(e) => setNewTaskSubmission(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Enter task title"
+                style={styles.formInput}
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.formLabel}>Description *</label>
+              <textarea
+                value={newTaskSubmission.description}
+                onChange={(e) => setNewTaskSubmission(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Describe your task submission..."
+                rows="4"
+                style={styles.formTextarea}
+              />
+            </div>
+
+            <div style={styles.formRow}>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Due Date</label>
+                <input
+                  type="date"
+                  value={newTaskSubmission.dueDate}
+                  onChange={(e) => setNewTaskSubmission(prev => ({ ...prev, dueDate: e.target.value }))}
+                  style={styles.formInput}
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Priority</label>
+                <select
+                  value={newTaskSubmission.priority}
+                  onChange={(e) => setNewTaskSubmission(prev => ({ ...prev, priority: e.target.value }))}
+                  style={styles.formSelect}
+                >
+                  <option value="low">🟢 Low</option>
+                  <option value="medium">🟡 Medium</option>
+                  <option value="high">🔴 High</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.formLabel}>Attach Files</label>
+              <div style={styles.fileUpload}>
+                <input
+                  type="file"
+                  onChange={(e) => setNewTaskSubmission(prev => ({ ...prev, file: e.target.files[0] }))}
+                  style={styles.fileInput}
+                  multiple
+                />
+                <p style={styles.fileHint}>Upload documents, images, or project files</p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleTaskSubmit}
+              style={styles.submitBtn}
+              disabled={!newTaskSubmission.title || !newTaskSubmission.description}
+            >
+              🚀 Submit Task
+            </button>
+          </div>
+        </div>
+
+        <div style={styles.submissionHistory}>
+          <h3 style={styles.sectionTitle}>📋 Recent Submissions</h3>
+          
+          {taskSubmissions.length === 0 ? (
+            <div style={styles.emptyState}>
+              <div style={styles.emptyIcon}>📭</div>
+              <p>No task submissions yet</p>
+            </div>
+          ) : (
+            <div style={styles.submissionList}>
+              {taskSubmissions.map(submission => (
+                <div key={submission.id} style={styles.submissionCard}>
+                  <div style={styles.submissionHeader}>
+                    <h4 style={styles.submissionTitle}>{submission.title}</h4>
+                    <span style={{
+                      ...styles.statusBadge,
+                      backgroundColor: submission.status === 'pending' ? '#fbbf24' : submission.status === 'approved' ? '#10b981' : '#ef4444'
+                    }}>
+                      {submission.status.toUpperCase()}
+                    </span>
+                  </div>
+                  <p style={styles.submissionDescription}>{submission.description}</p>
+                  <div style={styles.submissionMeta}>
+                    <span>📅 {new Date(submission.submittedAt).toLocaleDateString()}</span>
+                    <span>⚡ {submission.priority} priority</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  function renderApplicationHistory() {
+    return (
+      <div style={styles.applicationHistoryContainer}>
+        <div style={styles.pageHeader}>
+          <h2 style={styles.pageTitle}>📄 Application History</h2>
+          <p style={styles.pageDescription}>Track your job applications and their status</p>
+        </div>
+
+        <div style={styles.applicationStats}>
+          <div style={styles.statCard}>
+            <div style={styles.statNumber}>{applicationHistory.length}</div>
+            <div style={styles.statLabel}>Total Applications</div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={styles.statNumber}>{applicationHistory.filter(app => app.status === 'In Review').length}</div>
+            <div style={styles.statLabel}>In Review</div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={styles.statNumber}>{applicationHistory.filter(app => app.status === 'Pending').length}</div>
+            <div style={styles.statLabel}>Pending</div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={styles.statNumber}>{applicationHistory.filter(app => app.status === 'Rejected').length}</div>
+            <div style={styles.statLabel}>Rejected</div>
+          </div>
+        </div>
+
+        <div style={styles.applicationTable}>
+          <div style={styles.tableHeader}>
+            <div style={styles.tableHeaderCell}>Company</div>
+            <div style={styles.tableHeaderCell}>Position</div>
+            <div style={styles.tableHeaderCell}>Status</div>
+            <div style={styles.tableHeaderCell}>Applied</div>
+            <div style={styles.tableHeaderCell}>Stage</div>
+            <div style={styles.tableHeaderCell}>Actions</div>
+          </div>
+
+          {applicationHistory.map(application => (
+            <div key={application.id} style={styles.tableRow}>
+              <div style={styles.tableCell}>
+                <div style={styles.companyInfo}>
+                  <strong>{application.company}</strong>
+                </div>
+              </div>
+              <div style={styles.tableCell}>{application.position}</div>
+              <div style={styles.tableCell}>
+                <span style={{
+                  ...styles.statusBadge,
+                  backgroundColor: 
+                    application.status === 'In Review' ? '#3b82f6' :
+                    application.status === 'Pending' ? '#f59e0b' : '#ef4444'
+                }}>
+                  {application.status}
+                </span>
+              </div>
+              <div style={styles.tableCell}>{application.appliedDate}</div>
+              <div style={styles.tableCell}>{application.stage}</div>
+              <div style={styles.tableCell}>
+                <button style={styles.actionBtn}>👁️ View</button>
+                <button style={styles.actionBtn}>📞 Follow Up</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function renderCalendar() {
+    const today = new Date();
+    const currentMonth = today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    return (
+      <div style={styles.calendarContainer}>
+        <div style={styles.pageHeader}>
+          <h2 style={styles.pageTitle}>📅 Google Calendar Integration</h2>
+          <p style={styles.pageDescription}>Manage your interviews, deadlines, and events</p>
+        </div>
+
+        <div style={styles.calendarHeader}>
+          <h3 style={styles.monthTitle}>{currentMonth}</h3>
+          <div style={styles.calendarActions}>
+            <button style={styles.calendarBtn}>← Previous</button>
+            <button style={styles.calendarBtn}>Today</button>
+            <button style={styles.calendarBtn}>Next →</button>
+          </div>
+        </div>
+
+        <div style={styles.upcomingEvents}>
+          <h4 style={styles.eventsTitle}>🔔 Upcoming Events</h4>
+          
+          {calendarEvents.map(event => (
+            <div key={event.id} style={styles.eventCard}>
+              <div style={styles.eventHeader}>
+                <div style={styles.eventTitle}>
+                  <span style={styles.eventTypeIcon}>
+                    {event.type === 'interview' && '🎯'}
+                    {event.type === 'assignment' && '📚'}
+                    {event.type === 'workshop' && '🛠️'}
+                  </span>
+                  {event.title}
+                </div>
+                <div style={styles.eventDateTime}>
+                  {event.date} at {event.time}
+                </div>
+              </div>
+              <p style={styles.eventDescription}>{event.description}</p>
+              <div style={styles.eventActions}>
+                <button style={styles.eventActionBtn}>📝 Edit</button>
+                <button style={styles.eventActionBtn}>🗑️ Delete</button>
+                <button style={styles.eventActionBtn}>🔗 Join Meeting</button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={styles.calendarGrid}>
+          <div style={styles.calendarWeekHeader}>
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+              <div key={day} style={styles.weekDay}>{day}</div>
+            ))}
+          </div>
+          
+          <div style={styles.calendarDays}>
+            {Array.from({ length: 35 }, (_, i) => (
+              <div 
+                key={i} 
+                style={{
+                  ...styles.calendarDay,
+                  ...(i === 25 ? styles.todayDay : {}),
+                  ...(calendarEvents.some(e => e.date === `2026-01-${i + 1}`) ? styles.eventDay : {})
+                }}
+              >
+                {i + 1 <= 31 ? i + 1 : ''}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderHistory() {
+    return (
+      <div style={styles.historyContainer}>
+        <div style={styles.pageHeader}>
+          <h2 style={styles.pageTitle}>📚 Data History</h2>
+          <p style={styles.pageDescription}>View your complete activity and data history</p>
+        </div>
+
+        <div style={styles.historyTabs}>
+          <button style={styles.historyTab}>📋 Tasks</button>
+          <button style={styles.historyTab}>📄 Applications</button>
+          <button style={styles.historyTab}>🎯 Interviews</button>
+          <button style={styles.historyTab}>📧 Communications</button>
+          <button style={styles.historyTab}>📊 Performance</button>
+        </div>
+
+        <div style={styles.historyTimeline}>
+          <div style={styles.timelineItem}>
+            <div style={styles.timelineDate}>Today</div>
+            <div style={styles.timelineContent}>
+              <h4>🎯 Technical Interview Scheduled</h4>
+              <p>Interview with Google for Software Engineer position</p>
+              <small>2 hours ago</small>
+            </div>
+          </div>
+
+          <div style={styles.timelineItem}>
+            <div style={styles.timelineDate}>Yesterday</div>
+            <div style={styles.timelineContent}>
+              <h4>📋 Task Completed</h4>
+              <p>React Dashboard Assignment submitted successfully</p>
+              <small>1 day ago</small>
+            </div>
+          </div>
+
+          <div style={styles.timelineItem}>
+            <div style={styles.timelineDate}>Jan 23</div>
+            <div style={styles.timelineContent}>
+              <h4>📄 Application Submitted</h4>
+              <p>Applied to Microsoft for Frontend Developer position</p>
+              <small>2 days ago</small>
+            </div>
+          </div>
+
+          <div style={styles.timelineItem}>
+            <div style={styles.timelineDate}>Jan 22</div>
+            <div style={styles.timelineContent}>
+              <h4>📧 Email Received</h4>
+              <p>Interview confirmation from Apple recruiter</p>
+              <small>3 days ago</small>
+            </div>
           </div>
         </div>
       </div>
@@ -3000,6 +3421,447 @@ const styles = {
     fontSize: '12px',
     color: '#9ca3af',
     fontStyle: 'italic'
+  },
+
+  // Task Submission Styles
+  taskSubmissionContainer: {
+    padding: '30px',
+    maxWidth: '1200px',
+    margin: '0 auto',
+  },
+  submissionForm: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(20px)',
+    padding: '30px',
+    borderRadius: '16px',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+    marginBottom: '30px',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+  },
+  formSection: {
+    marginBottom: '20px',
+  },
+  formGroup: {
+    marginBottom: '20px',
+  },
+  formRow: {
+    display: 'flex',
+    gap: '20px',
+    marginBottom: '20px',
+  },
+  formLabel: {
+    display: 'block',
+    marginBottom: '8px',
+    fontWeight: '600',
+    color: '#1e293b',
+    fontSize: '14px',
+  },
+  formInput: {
+    width: '100%',
+    padding: '12px 16px',
+    border: '2px solid #e2e8f0',
+    borderRadius: '12px',
+    fontSize: '14px',
+    transition: 'all 0.2s ease',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+  },
+  formTextarea: {
+    width: '100%',
+    padding: '12px 16px',
+    border: '2px solid #e2e8f0',
+    borderRadius: '12px',
+    fontSize: '14px',
+    resize: 'vertical',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    fontFamily: 'inherit',
+  },
+  formSelect: {
+    width: '100%',
+    padding: '12px 16px',
+    border: '2px solid #e2e8f0',
+    borderRadius: '12px',
+    fontSize: '14px',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+  },
+  fileUpload: {
+    border: '2px dashed #cbd5e1',
+    borderRadius: '12px',
+    padding: '24px',
+    textAlign: 'center',
+    backgroundColor: 'rgba(248, 250, 252, 0.8)',
+    transition: 'all 0.2s ease',
+  },
+  fileInput: {
+    margin: '10px 0',
+  },
+  fileHint: {
+    color: '#64748b',
+    fontSize: '14px',
+    margin: '5px 0',
+  },
+  submitBtn: {
+    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+    color: 'white',
+    border: 'none',
+    padding: '14px 32px',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+  },
+  submissionHistory: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(20px)',
+    padding: '30px',
+    borderRadius: '16px',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+  },
+  submissionList: {
+    display: 'grid',
+    gap: '16px',
+  },
+  submissionCard: {
+    border: '1px solid #e2e8f0',
+    borderRadius: '12px',
+    padding: '20px',
+    backgroundColor: 'rgba(248, 250, 252, 0.8)',
+    transition: 'all 0.2s ease',
+  },
+  submissionHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '12px',
+  },
+  submissionTitle: {
+    margin: 0,
+    color: '#0f172a',
+    fontSize: '18px',
+    fontWeight: '600',
+  },
+  submissionDescription: {
+    color: '#64748b',
+    marginBottom: '16px',
+    lineHeight: '1.5',
+  },
+  submissionMeta: {
+    display: 'flex',
+    gap: '20px',
+    fontSize: '13px',
+    color: '#64748b',
+  },
+
+  // Application History Styles
+  applicationHistoryContainer: {
+    padding: '30px',
+    maxWidth: '1400px',
+    margin: '0 auto',
+  },
+  applicationStats: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '20px',
+    marginBottom: '30px',
+  },
+  applicationTable: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '16px',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+    overflow: 'hidden',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+  },
+  tableHeader: {
+    display: 'grid',
+    gridTemplateColumns: '1.5fr 1.5fr 1fr 1fr 1fr 1.2fr',
+    backgroundColor: 'rgba(241, 245, 249, 0.8)',
+    padding: '20px',
+    fontWeight: '600',
+    color: '#1e293b',
+    borderBottom: '1px solid #e2e8f0',
+  },
+  tableHeaderCell: {
+    padding: '0 12px',
+  },
+  tableRow: {
+    display: 'grid',
+    gridTemplateColumns: '1.5fr 1.5fr 1fr 1fr 1fr 1.2fr',
+    padding: '20px',
+    borderBottom: '1px solid #f1f5f9',
+    alignItems: 'center',
+    transition: 'all 0.2s ease',
+  },
+  tableCell: {
+    padding: '0 12px',
+  },
+  companyInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    fontWeight: '600',
+    color: '#0f172a',
+  },
+  actionBtn: {
+    backgroundColor: '#e2e8f0',
+    border: 'none',
+    padding: '8px 12px',
+    borderRadius: '8px',
+    fontSize: '12px',
+    cursor: 'pointer',
+    marginRight: '8px',
+    transition: 'all 0.2s ease',
+    fontWeight: '500',
+  },
+
+  // Calendar Styles
+  calendarContainer: {
+    padding: '30px',
+    maxWidth: '1200px',
+    margin: '0 auto',
+  },
+  calendarHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '30px',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(20px)',
+    padding: '24px',
+    borderRadius: '16px',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+  },
+  monthTitle: {
+    margin: 0,
+    fontSize: '28px',
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  calendarActions: {
+    display: 'flex',
+    gap: '12px',
+  },
+  calendarBtn: {
+    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+    color: 'white',
+    border: 'none',
+    padding: '10px 18px',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    fontWeight: '600',
+    fontSize: '14px',
+    transition: 'all 0.2s ease',
+  },
+  upcomingEvents: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(20px)',
+    padding: '30px',
+    borderRadius: '16px',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+    marginBottom: '30px',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+  },
+  eventsTitle: {
+    margin: '0 0 24px 0',
+    color: '#0f172a',
+    fontSize: '20px',
+    fontWeight: '600',
+  },
+  eventCard: {
+    border: '1px solid #e2e8f0',
+    borderRadius: '12px',
+    padding: '20px',
+    marginBottom: '16px',
+    backgroundColor: 'rgba(248, 250, 252, 0.8)',
+    transition: 'all 0.2s ease',
+  },
+  eventHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '12px',
+  },
+  eventTitle: {
+    fontWeight: '600',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    color: '#0f172a',
+    fontSize: '16px',
+  },
+  eventTypeIcon: {
+    fontSize: '20px',
+  },
+  eventDateTime: {
+    color: '#64748b',
+    fontSize: '14px',
+    fontWeight: '500',
+  },
+  eventDescription: {
+    color: '#64748b',
+    marginBottom: '16px',
+    lineHeight: '1.5',
+  },
+  eventActions: {
+    display: 'flex',
+    gap: '12px',
+  },
+  eventActionBtn: {
+    backgroundColor: '#e2e8f0',
+    border: 'none',
+    padding: '8px 14px',
+    borderRadius: '8px',
+    fontSize: '12px',
+    cursor: 'pointer',
+    fontWeight: '500',
+    transition: 'all 0.2s ease',
+  },
+  calendarGrid: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(20px)',
+    padding: '30px',
+    borderRadius: '16px',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+  },
+  calendarWeekHeader: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(7, 1fr)',
+    gap: '1px',
+    marginBottom: '12px',
+  },
+  weekDay: {
+    padding: '12px',
+    textAlign: 'center',
+    fontWeight: '600',
+    backgroundColor: '#f1f5f9',
+    color: '#475569',
+    fontSize: '14px',
+  },
+  calendarDays: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(7, 1fr)',
+    gap: '1px',
+  },
+  calendarDay: {
+    padding: '16px',
+    textAlign: 'center',
+    border: '1px solid #e2e8f0',
+    cursor: 'pointer',
+    minHeight: '50px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s ease',
+    backgroundColor: 'white',
+  },
+  todayDay: {
+    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+    color: 'white',
+    fontWeight: '700',
+    borderRadius: '8px',
+  },
+  eventDay: {
+    backgroundColor: '#fef3c7',
+    border: '1px solid #f59e0b',
+    fontWeight: '600',
+  },
+
+  // History Styles
+  historyContainer: {
+    padding: '30px',
+    maxWidth: '1200px',
+    margin: '0 auto',
+  },
+  historyTabs: {
+    display: 'flex',
+    gap: '12px',
+    marginBottom: '30px',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(20px)',
+    padding: '16px',
+    borderRadius: '16px',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+  },
+  historyTab: {
+    backgroundColor: 'rgba(241, 245, 249, 0.8)',
+    border: 'none',
+    padding: '12px 20px',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#475569',
+    transition: 'all 0.2s ease',
+  },
+  historyTimeline: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(20px)',
+    padding: '30px',
+    borderRadius: '16px',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+  },
+  timelineItem: {
+    display: 'flex',
+    gap: '24px',
+    padding: '24px 0',
+    borderBottom: '1px solid #e2e8f0',
+  },
+  timelineDate: {
+    minWidth: '120px',
+    color: '#64748b',
+    fontSize: '14px',
+    fontWeight: '600',
+  },
+  timelineContent: {
+    flex: 1,
+  },
+
+  // Page Header Styles
+  pageHeader: {
+    marginBottom: '32px',
+    textAlign: 'center',
+  },
+  pageTitle: {
+    fontSize: '32px',
+    fontWeight: '700',
+    color: 'white',
+    margin: '0 0 8px 0',
+    textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+  },
+  pageDescription: {
+    fontSize: '16px',
+    color: 'rgba(255, 255, 255, 0.8)',
+    margin: 0,
+  },
+  sectionTitle: {
+    fontSize: '20px',
+    fontWeight: '600',
+    color: '#0f172a',
+    marginBottom: '16px',
+  },
+  statusBadge: {
+    padding: '4px 12px',
+    borderRadius: '20px',
+    fontSize: '12px',
+    fontWeight: '600',
+    color: 'white',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+  },
+  emptyState: {
+    textAlign: 'center',
+    padding: '60px 20px',
+    color: '#64748b',
+  },
+  emptyIcon: {
+    fontSize: '48px',
+    marginBottom: '16px',
   }
 };
 

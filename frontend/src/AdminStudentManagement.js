@@ -17,7 +17,7 @@ export default function AdminStudentManagement() {
 
   const fetchApplications = async () => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const apiUrl = backendUrl ? `${backendUrl}/applications` : '/applications';
 
       console.log('Fetching from:', apiUrl);
@@ -48,7 +48,7 @@ export default function AdminStudentManagement() {
 
   const getResumeUrl = (resumePath) => {
     if (!resumePath) return null;
-    const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+    const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
     
     // If it already has a full URL, use it
     if (resumePath.startsWith('http://') || resumePath.startsWith('https://')) {
@@ -73,7 +73,7 @@ export default function AdminStudentManagement() {
 
   const generateSetupLink = async (student) => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const apiUrl = backendUrl 
         ? `${backendUrl}/api/applications/${student.id}/generate-setup-link` 
         : `/api/applications/${student.id}/generate-setup-link`;
@@ -123,7 +123,7 @@ export default function AdminStudentManagement() {
     if (!validatePassword(tempPassword)) return;
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const apiUrl = backendUrl 
         ? `${backendUrl}/api/applications/${selectedStudent.id}/approve` 
         : `/api/applications/${selectedStudent.id}/approve`;
@@ -159,7 +159,7 @@ export default function AdminStudentManagement() {
     if (!window.confirm('Are you sure you want to reject this application?')) return;
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const apiUrl = backendUrl 
         ? `${backendUrl}/api/applications/${studentId}/reject` 
         : `/api/applications/${studentId}/reject`;

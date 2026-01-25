@@ -21,7 +21,7 @@ export default function TrainerDashboard() {
 
   const fetchApplications = async () => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const apiUrl = backendUrl ? `${backendUrl}/applications` : '/applications';
       
       const response = await fetch(apiUrl);

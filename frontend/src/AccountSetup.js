@@ -24,7 +24,7 @@ export default function AccountSetup() {
 
   const fetchUserProfile = async (token) => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const apiUrl = backendUrl ? `${backendUrl}/auth/me` : '/auth/me';
 
       const res = await fetch(apiUrl, {
@@ -77,7 +77,7 @@ export default function AccountSetup() {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const apiUrl = backendUrl 
         ? `${backendUrl}/auth/change-password` 
         : '/auth/change-password';

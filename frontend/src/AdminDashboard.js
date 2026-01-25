@@ -275,6 +275,14 @@ export default function AdminDashboard() {
   const handleCreateUser = async () => {
     console.log('🔥 CREATE USER BUTTON CLICKED!');
     console.log('📋 Form state:', userForm);
+    console.log('📋 Required fields check:', {
+      name: !!userForm.name,
+      email: !!userForm.email,
+      role: !!userForm.role,
+      nameValue: userForm.name,
+      emailValue: userForm.email,
+      roleValue: userForm.role
+    });
     
     if (!userForm.name || !userForm.email || !userForm.role) {
       console.log('⚠️ Validation failed:', { name: !!userForm.name, email: !!userForm.email, role: !!userForm.role });
@@ -285,6 +293,7 @@ export default function AdminDashboard() {
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userForm.email)) {
+      console.log('⚠️ Email validation failed:', userForm.email);
       alert('⚠️ Please enter a valid email address.');
       return;
     }

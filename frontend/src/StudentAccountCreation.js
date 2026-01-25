@@ -29,7 +29,7 @@ export default function StudentAccountCreation() {
     }
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const apiUrl = backendUrl ? `${backendUrl}/auth/verify-setup-token` : '/auth/verify-setup-token';
 
       const res = await fetch(apiUrl, {
@@ -90,7 +90,7 @@ export default function StudentAccountCreation() {
 
     setSubmitting(true);
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const apiUrl = backendUrl ? `${backendUrl}/auth/create-account-from-token` : '/auth/create-account-from-token';
 
       const res = await fetch(apiUrl, {

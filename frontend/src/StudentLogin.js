@@ -9,7 +9,7 @@ export default function StudentLogin() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const apiUrl = backendUrl ? `${backendUrl}/auth/login` : '/auth/login';
 
       const res = await fetch(apiUrl, {
