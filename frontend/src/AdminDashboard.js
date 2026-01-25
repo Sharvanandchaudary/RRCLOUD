@@ -86,18 +86,21 @@ export default function AdminDashboard() {
       const token = localStorage.getItem('auth_token');
       if (!token) {
         alert('❌ Please login to create assignments');
+        console.error('No auth token found for assignment creation');
         return;
       }
 
       if (!assignmentForm.student_id || !assignmentForm.assigned_user_id || !assignmentForm.assigned_user_role) {
         alert('⚠️ Please fill in all required fields');
+        console.error('Missing assignment form fields:', assignmentForm);
         return;
       }
 
-      // Show loading state
-      const originalButtonText = document.querySelector('button[onclick="handleCreateAssignment()"]')?.textContent;
-      
       const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      console.log('🔍 Assignment Debug Info:');
+      console.log('- Backend URL:', backendUrl);
+      console.log('- Token exists:', !!token);
+      console.log('- Assignment form:', assignmentForm);
       console.log('Creating assignment at:', `${backendUrl}/api/assignments`);
       
       const response = await fetch(`${backendUrl}/api/assignments`, {
@@ -278,11 +281,25 @@ export default function AdminDashboard() {
       const token = localStorage.getItem('auth_token');
       if (!token) {
         alert('❌ Authentication required. Please log in again.');
+        console.error('No auth token found in localStorage');
         return;
       }
       
       const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      console.log('🔍 Debug Info:');
+      console.log('- Backend URL:', backendUrl);
+      console.log('- Token exists:', !!token);
+      console.log('- Token preview:', token.substring(0, 20) + '...');
+      console.log('- User form data:', userForm);
       console.log('Creating user at:', `${backendUrl}/api/users`);
+
+      const requestBody = {
+        name: userForm.name,
+        email: userForm.email,
+        phone: userForm.phone,
+        role: userForm.role
+      };
+      console.log('Request body:', requestBody);
 
       const res = await fetch(`${backendUrl}/api/users`, {
         method: 'POST',
@@ -290,17 +307,15 @@ export default function AdminDashboard() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          name: userForm.name,
-          email: userForm.email,
-          phone: userForm.phone,
-          role: userForm.role
-        })
+        body: JSON.stringify(requestBody)
       });
+
+      console.log('Response status:', res.status);
+      console.log('Response headers:', [...res.headers.entries()]);
 
       if (res.ok) {
         const result = await res.json();
-        console.log('User created successfully:', result);
+        console.log('✅ User created successfully:', result);
         
         alert(`✅ Corporate User Account Created Successfully!\n\n👤 User Details:\n• Name: ${userForm.name}\n• Email: ${userForm.email}\n• Role: ${userForm.role.charAt(0).toUpperCase() + userForm.role.slice(1)}\n• Phone: ${userForm.phone || 'Not provided'}\n\n🔐 Account Credentials:\n• Login URL: https://rrcloud-frontend-nsmgws4u4a-uc.a.run.app/login\n• Email: ${userForm.email}\n• Default Password: password123\n\n📧 Welcome email sent to user with complete login instructions.\n\n⚠️ User will be prompted to change password on first login for security.`);
         

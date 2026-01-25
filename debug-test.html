@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        input, select { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 3px; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; font-family: monospace; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Admin Dashboard Debug Test</h1>
+    
+    <div class="test-section">
+        <h2>🔐 Authentication Test</h2>
+        <button onclick="testLogin()">Test Admin Login</button>
+        <div id="loginResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>👤 User Creation Test</h2>
+        <input type="text" id="userName" placeholder="User Name" value="Debug Test User">
+        <input type="email" id="userEmail" placeholder="Email" value="debugtest@example.com">
+        <input type="text" id="userPhone" placeholder="Phone" value="1234567890">
+        <select id="userRole">
+            <option value="student">Student</option>
+            <option value="trainer">Trainer</option>
+            <option value="recruiter">Recruiter</option>
+        </select>
+        <button onclick="testCreateUser()">Create User</button>
+        <div id="userResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Users List Test</h2>
+        <button onclick="testGetUsers()">Get Users List</button>
+        <div id="usersResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔄 Assignment Creation Test</h2>
+        <input type="number" id="studentId" placeholder="Student ID" value="24">
+        <input type="number" id="assignedUserId" placeholder="Assigned User ID (Admin)" value="7">
+        <select id="assignedRole">
+            <option value="trainer">Trainer</option>
+            <option value="recruiter">Recruiter</option>
+        </select>
+        <button onclick="testCreateAssignment()">Create Assignment</button>
+        <div id="assignmentResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>⚙️ Configuration Debug</h2>
+        <button onclick="showConfig()">Show Configuration</button>
+        <div id="configResult" class="result"></div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+        let authToken = null;
+
+        function log(elementId, message) {
+            document.getElementById(elementId).textContent = message;
+            console.log(message);
+        }
+
+        async function testLogin() {
+            try {
+                log('loginResult', '🔄 Testing login...');
+                
+                const response = await fetch(`${BACKEND_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'admin@zgenai.com',
+                        password: 'admin123'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    authToken = result.token;
+                    log('loginResult', `✅ Login successful!\nToken: ${authToken.substring(0, 30)}...\nUser: ${JSON.stringify(result.user, null, 2)}`);
+                } else {
+                    log('loginResult', `❌ Login failed!\nStatus: ${response.status}\nError: ${JSON.stringify(result, null, 2)}`);
+                }
+            } catch (error) {
+                log('loginResult', `❌ Login error: ${error.message}\nStack: ${error.stack}`);
+            }
+        }
+
+        async function testCreateUser() {
+            if (!authToken) {
+                log('userResult', '❌ Please login first!');
+                return;
+            }
+
+            try {
+                log('userResult', '🔄 Creating user...');
+                
+                const userData = {
+                    name: document.getElementById('userName').value,
+                    email: document.getElementById('userEmail').value,
+                    phone: document.getElementById('userPhone').value,
+                    role: document.getElementById('userRole').value
+                };
+
+                console.log('User data:', userData);
+                console.log('Token:', authToken.substring(0, 30) + '...');
+
+                const response = await fetch(`${BACKEND_URL}/api/users`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log('userResult', `✅ User created successfully!\n${JSON.stringify(result, null, 2)}`);
+                } else {
+                    log('userResult', `❌ User creation failed!\nStatus: ${response.status}\nError: ${JSON.stringify(result, null, 2)}`);
+                }
+            } catch (error) {
+                log('userResult', `❌ User creation error: ${error.message}\nStack: ${error.stack}`);
+            }
+        }
+
+        async function testGetUsers() {
+            if (!authToken) {
+                log('usersResult', '❌ Please login first!');
+                return;
+            }
+
+            try {
+                log('usersResult', '🔄 Fetching users...');
+                
+                const response = await fetch(`${BACKEND_URL}/api/users`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log('usersResult', `✅ Users fetched successfully!\nCount: ${result.users.length}\nFirst 3 users:\n${JSON.stringify(result.users.slice(0, 3), null, 2)}`);
+                } else {
+                    log('usersResult', `❌ Users fetch failed!\nStatus: ${response.status}\nError: ${JSON.stringify(result, null, 2)}`);
+                }
+            } catch (error) {
+                log('usersResult', `❌ Users fetch error: ${error.message}\nStack: ${error.stack}`);
+            }
+        }
+
+        async function testCreateAssignment() {
+            if (!authToken) {
+                log('assignmentResult', '❌ Please login first!');
+                return;
+            }
+
+            try {
+                log('assignmentResult', '🔄 Creating assignment...');
+                
+                const assignmentData = {
+                    student_id: document.getElementById('studentId').value,
+                    assigned_user_id: document.getElementById('assignedUserId').value,
+                    assigned_user_role: document.getElementById('assignedRole').value
+                };
+
+                console.log('Assignment data:', assignmentData);
+
+                const response = await fetch(`${BACKEND_URL}/api/assignments`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(assignmentData)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log('assignmentResult', `✅ Assignment created successfully!\n${JSON.stringify(result, null, 2)}`);
+                } else {
+                    log('assignmentResult', `❌ Assignment creation failed!\nStatus: ${response.status}\nError: ${JSON.stringify(result, null, 2)}`);
+                }
+            } catch (error) {
+                log('assignmentResult', `❌ Assignment creation error: ${error.message}\nStack: ${error.stack}`);
+            }
+        }
+
+        function showConfig() {
+            const config = {
+                backendUrl: BACKEND_URL,
+                currentToken: authToken ? authToken.substring(0, 30) + '...' : 'None',
+                localStorage: {
+                    auth_token: localStorage.getItem('auth_token') ? localStorage.getItem('auth_token').substring(0, 30) + '...' : 'None'
+                },
+                runtimeConfig: window.RUNTIME_CONFIG || 'Not loaded',
+                userAgent: navigator.userAgent
+            };
+            
+            log('configResult', `Configuration:\n${JSON.stringify(config, null, 2)}`);
+        }
+    </script>
+</body>
+</html>
