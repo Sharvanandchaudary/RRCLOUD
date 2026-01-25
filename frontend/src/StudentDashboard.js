@@ -61,7 +61,7 @@ function StudentDashboard() {
   const fetchAssignments = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const response = await fetch(`${backendUrl}/api/assignments`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -77,7 +77,7 @@ function StudentDashboard() {
   const fetchStudentData = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const response = await fetch(`${backendUrl}/api/student-data`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -93,7 +93,7 @@ function StudentDashboard() {
   const fetchTrainerTasks = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const response = await fetch(`${backendUrl}/api/trainer-tasks`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -109,7 +109,7 @@ function StudentDashboard() {
   const fetchInterviewCalls = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const response = await fetch(`${backendUrl}/api/interview-calls`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -125,7 +125,7 @@ function StudentDashboard() {
   const handleCreateInterviewCall = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const response = await fetch(`${backendUrl}/api/interview-calls`, {
         method: 'POST',
         headers: {
@@ -159,7 +159,7 @@ function StudentDashboard() {
   const handleTaskStatusUpdate = async (taskId, newStatus) => {
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const response = await fetch(`${backendUrl}/api/trainer-tasks/${taskId}`, {
         method: 'PUT',
         headers: {
@@ -182,7 +182,7 @@ function StudentDashboard() {
 
   const fetchUserProfile = async (token) => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const response = await fetch(`${backendUrl}/auth/me`, {
         method: 'GET',
         headers: {
@@ -211,7 +211,7 @@ function StudentDashboard() {
 
   const fetchApplication = async (email, token) => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const response = await fetch(`${backendUrl}/api/applications/${email}`, {
         method: 'GET',
         headers: {
@@ -237,7 +237,7 @@ function StudentDashboard() {
 
   const fetchTasks = async () => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${backendUrl}/api/student/tasks`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -256,7 +256,7 @@ function StudentDashboard() {
 
   const fetchVisualizationData = async () => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${backendUrl}/api/student/analytics`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -275,7 +275,7 @@ function StudentDashboard() {
   const handleTaskSubmit = async (e) => {
     e.preventDefault();
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${backendUrl}/api/student/tasks`, {
         method: 'POST',
@@ -298,7 +298,7 @@ function StudentDashboard() {
 
   const handleTaskComplete = async (taskId) => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${backendUrl}/api/student/tasks/${taskId}/complete`, {
         method: 'PUT',
@@ -323,7 +323,7 @@ function StudentDashboard() {
     formData.append('file', file);
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${backendUrl}/api/student/upload-data`, {
         method: 'POST',
@@ -392,7 +392,7 @@ function StudentDashboard() {
 
       {/* Navigation Tabs */}
       <div style={styles.tabContainer}>
-        {['dashboard', 'tasks', 'analytics', 'data', 'interviews'].map((tab) => (
+        {['dashboard', 'tasks', 'analytics', 'data', 'interviews', 'gmail'].map((tab) => (
           <button
             key={tab}
             style={{
@@ -406,6 +406,7 @@ function StudentDashboard() {
             {tab === 'analytics' && '📈 Analytics'}
             {tab === 'data' && '💾 Data Hub'}
             {tab === 'interviews' && '📞 Interviews'}
+            {tab === 'gmail' && '📧 Gmail'}
           </button>
         ))}
       </div>
@@ -417,6 +418,7 @@ function StudentDashboard() {
         {activeTab === 'analytics' && renderAnalytics()}
         {activeTab === 'data' && renderDataHub()}
         {activeTab === 'interviews' && renderInterviews()}
+        {activeTab === 'gmail' && renderGmail()}
       </div>
     </div>
   );
@@ -1007,6 +1009,206 @@ function StudentDashboard() {
                 <span style={styles.progressPercent}>65%</span>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderGmail() {
+    const [emails, setEmails] = useState([
+      {
+        id: 1,
+        sender: 'hr@techcorp.com',
+        subject: 'Interview Invitation - Software Engineer Position',
+        preview: 'We are pleased to invite you for an interview...',
+        time: '2 hours ago',
+        read: false,
+        important: true
+      },
+      {
+        id: 2,
+        sender: 'careers@innovatetech.com',
+        subject: 'Application Status Update',
+        preview: 'Thank you for your application. We have reviewed...',
+        time: '1 day ago',
+        read: true,
+        important: false
+      },
+      {
+        id: 3,
+        sender: 'noreply@jobplatform.com',
+        subject: 'New Job Matches Available',
+        preview: 'Based on your profile, we found 5 new job opportunities...',
+        time: '3 days ago',
+        read: true,
+        important: false
+      }
+    ]);
+    
+    const [selectedEmail, setSelectedEmail] = useState(null);
+    const [composing, setComposing] = useState(false);
+    const [newEmail, setNewEmail] = useState({
+      to: '',
+      subject: '',
+      body: ''
+    });
+
+    const handleMarkAsRead = (emailId) => {
+      setEmails(prev => prev.map(email => 
+        email.id === emailId ? { ...email, read: true } : email
+      ));
+    };
+
+    const handleSendEmail = () => {
+      // In a real app, this would send via Gmail API
+      alert(`Email sent to ${newEmail.to}!\nSubject: ${newEmail.subject}`);
+      setComposing(false);
+      setNewEmail({ to: '', subject: '', body: '' });
+    };
+
+    return (
+      <div style={styles.gmailContainer}>
+        <div style={styles.gmailHeader}>
+          <h2 style={styles.gmailTitle}>📧 Gmail Integration</h2>
+          <button 
+            style={styles.composeBtn}
+            onClick={() => setComposing(true)}
+          >
+            ✉️ Compose
+          </button>
+        </div>
+
+        {composing && (
+          <div style={styles.composeModal}>
+            <div style={styles.composeForm}>
+              <h3 style={styles.composeTitle}>Compose New Email</h3>
+              
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>To:</label>
+                <input
+                  type="email"
+                  style={styles.formInput}
+                  value={newEmail.to}
+                  onChange={(e) => setNewEmail(prev => ({ ...prev, to: e.target.value }))}
+                  placeholder="recipient@email.com"
+                />
+              </div>
+              
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Subject:</label>
+                <input
+                  type="text"
+                  style={styles.formInput}
+                  value={newEmail.subject}
+                  onChange={(e) => setNewEmail(prev => ({ ...prev, subject: e.target.value }))}
+                  placeholder="Email subject"
+                />
+              </div>
+              
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Message:</label>
+                <textarea
+                  style={styles.formTextarea}
+                  value={newEmail.body}
+                  onChange={(e) => setNewEmail(prev => ({ ...prev, body: e.target.value }))}
+                  placeholder="Write your message here..."
+                  rows="8"
+                />
+              </div>
+              
+              <div style={styles.composeActions}>
+                <button 
+                  style={styles.sendBtn}
+                  onClick={handleSendEmail}
+                  disabled={!newEmail.to || !newEmail.subject}
+                >
+                  🚀 Send
+                </button>
+                <button 
+                  style={styles.cancelBtn}
+                  onClick={() => setComposing(false)}
+                >
+                  ❌ Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div style={styles.emailList}>
+          {selectedEmail ? (
+            <div style={styles.emailView}>
+              <div style={styles.emailViewHeader}>
+                <button 
+                  style={styles.backBtn}
+                  onClick={() => setSelectedEmail(null)}
+                >
+                  ← Back to Inbox
+                </button>
+                <div style={styles.emailMeta}>
+                  <strong>{selectedEmail.sender}</strong>
+                  <span style={styles.emailTime}>{selectedEmail.time}</span>
+                </div>
+              </div>
+              
+              <h3 style={styles.emailSubject}>{selectedEmail.subject}</h3>
+              
+              <div style={styles.emailBody}>
+                {selectedEmail.preview}... 
+                
+                <p>Dear Student,</p>
+                <p>We hope this email finds you well. We are writing to inform you about exciting opportunities in your field.</p>
+                <p>Please feel free to reach out if you have any questions.</p>
+                <p>Best regards,<br/>The Team</p>
+              </div>
+              
+              <div style={styles.emailActions}>
+                <button style={styles.replyBtn}>↩️ Reply</button>
+                <button style={styles.forwardBtn}>↗️ Forward</button>
+                <button style={styles.deleteBtn}>🗑️ Delete</button>
+              </div>
+            </div>
+          ) : (
+            <div style={styles.inbox}>
+              <h3 style={styles.inboxTitle}>📬 Inbox ({emails.filter(e => !e.read).length} unread)</h3>
+              
+              {emails.map(email => (
+                <div 
+                  key={email.id} 
+                  style={{
+                    ...styles.emailItem,
+                    backgroundColor: email.read ? '#fff' : '#f0f9ff',
+                    fontWeight: email.read ? 'normal' : 'bold'
+                  }}
+                  onClick={() => {
+                    setSelectedEmail(email);
+                    handleMarkAsRead(email.id);
+                  }}
+                >
+                  <div style={styles.emailItemHeader}>
+                    <div style={styles.emailSender}>
+                      {email.important && <span style={styles.importantFlag}>⭐</span>}
+                      {email.sender}
+                    </div>
+                    <div style={styles.emailTime}>{email.time}</div>
+                  </div>
+                  
+                  <div style={styles.emailSubjectLine}>{email.subject}</div>
+                  <div style={styles.emailPreview}>{email.preview}</div>
+                  
+                  {!email.read && <div style={styles.unreadIndicator}>●</div>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div style={styles.gmailFooter}>
+          <div style={styles.gmailStats}>
+            <span>📊 {emails.length} emails total</span>
+            <span>📬 {emails.filter(e => !e.read).length} unread</span>
+            <span>⭐ {emails.filter(e => e.important).length} important</span>
           </div>
         </div>
       </div>
@@ -2264,6 +2466,267 @@ const styles = {
     color: '#9ca3af',
     borderTop: '1px solid #e5e7eb',
     paddingTop: '8px'
+  },
+
+  // Gmail Integration Styles
+  gmailContainer: {
+    padding: '20px',
+    maxWidth: '1200px',
+    margin: '0 auto'
+  },
+  gmailHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '24px',
+    padding: '16px',
+    background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+    borderRadius: '12px',
+    color: 'white'
+  },
+  gmailTitle: {
+    margin: 0,
+    fontSize: '24px',
+    fontWeight: '700'
+  },
+  composeBtn: {
+    background: 'rgba(255, 255, 255, 0.2)',
+    color: 'white',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease'
+  },
+  composeModal: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000
+  },
+  composeForm: {
+    background: 'white',
+    borderRadius: '12px',
+    padding: '24px',
+    width: '90%',
+    maxWidth: '600px',
+    maxHeight: '80vh',
+    overflow: 'auto'
+  },
+  composeTitle: {
+    margin: '0 0 20px 0',
+    fontSize: '20px',
+    fontWeight: '700',
+    color: '#1f2937'
+  },
+  formGroup: {
+    marginBottom: '16px'
+  },
+  formLabel: {
+    display: 'block',
+    marginBottom: '6px',
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#374151'
+  },
+  formInput: {
+    width: '100%',
+    padding: '10px 12px',
+    border: '2px solid #e5e7eb',
+    borderRadius: '8px',
+    fontSize: '14px',
+    transition: 'border-color 0.3s ease',
+    boxSizing: 'border-box'
+  },
+  formTextarea: {
+    width: '100%',
+    padding: '12px',
+    border: '2px solid #e5e7eb',
+    borderRadius: '8px',
+    fontSize: '14px',
+    resize: 'vertical',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box'
+  },
+  composeActions: {
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'flex-end',
+    marginTop: '20px'
+  },
+  sendBtn: {
+    background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+    color: 'white',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer'
+  },
+  cancelBtn: {
+    background: '#f3f4f6',
+    color: '#6b7280',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer'
+  },
+  emailList: {
+    background: 'white',
+    borderRadius: '12px',
+    border: '1px solid #e5e7eb',
+    overflow: 'hidden'
+  },
+  emailView: {
+    padding: '24px'
+  },
+  emailViewHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '16px',
+    paddingBottom: '16px',
+    borderBottom: '1px solid #e5e7eb'
+  },
+  backBtn: {
+    background: '#f3f4f6',
+    color: '#6b7280',
+    border: 'none',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    fontSize: '14px',
+    cursor: 'pointer'
+  },
+  emailMeta: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    fontSize: '14px'
+  },
+  emailTime: {
+    color: '#9ca3af',
+    fontSize: '12px'
+  },
+  emailSubject: {
+    fontSize: '20px',
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: '16px'
+  },
+  emailBody: {
+    fontSize: '14px',
+    lineHeight: '1.6',
+    color: '#374151',
+    marginBottom: '24px'
+  },
+  emailActions: {
+    display: 'flex',
+    gap: '12px'
+  },
+  replyBtn: {
+    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+    color: 'white',
+    border: 'none',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    fontSize: '14px',
+    cursor: 'pointer'
+  },
+  forwardBtn: {
+    background: '#f59e0b',
+    color: 'white',
+    border: 'none',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    fontSize: '14px',
+    cursor: 'pointer'
+  },
+  deleteBtn: {
+    background: '#ef4444',
+    color: 'white',
+    border: 'none',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    fontSize: '14px',
+    cursor: 'pointer'
+  },
+  inbox: {
+    padding: '20px'
+  },
+  inboxTitle: {
+    fontSize: '18px',
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: '16px'
+  },
+  emailItem: {
+    padding: '16px',
+    borderBottom: '1px solid #f3f4f6',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s ease',
+    position: 'relative'
+  },
+  emailItemHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '8px'
+  },
+  emailSender: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#1f2937',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px'
+  },
+  importantFlag: {
+    color: '#f59e0b'
+  },
+  emailSubjectLine: {
+    fontSize: '16px',
+    fontWeight: '500',
+    color: '#1f2937',
+    marginBottom: '4px'
+  },
+  emailPreview: {
+    fontSize: '14px',
+    color: '#6b7280',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+  },
+  unreadIndicator: {
+    position: 'absolute',
+    right: '16px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    color: '#3b82f6',
+    fontSize: '12px'
+  },
+  gmailFooter: {
+    marginTop: '20px',
+    padding: '16px',
+    background: '#f9fafb',
+    borderRadius: '8px',
+    border: '1px solid #e5e7eb'
+  },
+  gmailStats: {
+    display: 'flex',
+    justifyContent: 'space-around',
+    fontSize: '14px',
+    color: '#6b7280'
   }
 };
 
