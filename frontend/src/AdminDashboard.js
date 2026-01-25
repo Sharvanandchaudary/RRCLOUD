@@ -142,7 +142,7 @@ export default function AdminDashboard() {
     
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       
       const response = await fetch(`${backendUrl}/api/assignments/${assignmentId}`, {
         method: 'DELETE',
@@ -172,7 +172,7 @@ export default function AdminDashboard() {
     setLoading(true);
     setError('');
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const url = backendUrl ? `${backendUrl}/applications` : '/applications';
       
       const res = await fetch(url);
@@ -216,7 +216,7 @@ export default function AdminDashboard() {
     }
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const url = backendUrl 
         ? `${backendUrl}/api/applications/${selectedApp.id}/approve`
         : `/api/applications/${selectedApp.id}/approve`;
@@ -245,7 +245,7 @@ export default function AdminDashboard() {
     if (!window.confirm('Reject this application?')) return;
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || '';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const url = backendUrl 
         ? `${backendUrl}/api/applications/${appId}/reject`
         : `/api/applications/${appId}/reject`;
@@ -333,7 +333,7 @@ export default function AdminDashboard() {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
 
       const res = await fetch(`${backendUrl}/api/users/${userId}/block`, {
         method: 'PUT',
@@ -364,7 +364,7 @@ export default function AdminDashboard() {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
 
       const res = await fetch(`${backendUrl}/api/users/${userId}`, { 
         method: 'DELETE',
@@ -391,7 +391,7 @@ export default function AdminDashboard() {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'http://localhost:8080';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
 
       const res = await fetch(`${backendUrl}/api/applications/${appId}`, { 
         method: 'DELETE',
