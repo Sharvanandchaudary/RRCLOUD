@@ -5,8 +5,17 @@ const EnhancedUserManagement = () => {
   const [userForm, setUserForm] = useState({ name: '', email: '', phone: '', role: 'student' });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [assignments, setAssignments] = useState([]);
+  const [assignmentForm, setAssignmentForm] = useState({
+    title: '',
+    description: '',
+    due_date: '',
+    max_grade: 100,
+    student_id: '',
+    assigned_user_id: ''
+  });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -59,6 +68,14 @@ const EnhancedUserManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('❌ Please log in first. Go to Admin Dashboard and log in.');
+        setLoading(false);
+        return;
+      }
+
+      console.log('🚀 Creating user with token:', token.substring(0, 30) + '...');
+
       const response = await fetch('http://localhost:8080/api/users', {
         method: 'POST',
         headers: {
@@ -73,18 +90,33 @@ const EnhancedUserManagement = () => {
         })
       });
 
+      console.log('Response status:', response.status);
+
       if (response.ok) {
         const result = await response.json();
-        alert(`✅ USER CREATED SUCCESSFULLY!\n\n👤 ${result.user.full_name}\n📧 ${result.user.email}\n🎭 ${result.user.role.toUpperCase()}`);
+        alert(`✅ USER CREATED SUCCESSFULLY!\n\n👤 ${result.user.full_name}\n📧 ${result.user.email}\n🎭 ${result.user.role.toUpperCase()}\n\n🔑 Default password: password123`);
         setUserForm({ name: '', email: '', phone: '', role: 'student' });
         setShowCreateModal(false);
         loadUsers();
       } else {
-        const error = await response.json();
-        alert(`❌ Error: ${error.error || 'Failed to create user'}`);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        let errorMessage;
+        try {
+          const error = JSON.parse(errorText);
+          errorMessage = error.error || error.message || 'Failed to create user';
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        alert(`❌ Error: ${errorMessage}`);
       }
     } catch (error) {
-      alert(`❌ Network Error: ${error.message}`);
+      console.error('Network error:', error);
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        alert(`❌ Network Connection Error:\n\nCannot connect to backend server.\n\nPlease ensure:\n• Backend is running on port 8080\n• No firewall blocking connections\n• Server is accessible from browser`);
+      } else {
+        alert(`❌ Network Error: ${error.message}`);
+      }
     }
     setLoading(false);
   };
@@ -121,6 +153,58 @@ const EnhancedUserManagement = () => {
     }
   };
 
+  const handleCreateAssignment = async () => {
+    if (!assignmentForm.title?.trim() || !assignmentForm.description?.trim() || !assignmentForm.student_id) {
+      alert('❌ Please fill in all required fields: Title, Description, and Student');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('❌ Please log in first');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch('http://localhost:8080/api/assignments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: assignmentForm.title.trim(),
+          description: assignmentForm.description.trim(),
+          due_date: assignmentForm.due_date || null,
+          max_grade: assignmentForm.max_grade || 100,
+          student_id: parseInt(assignmentForm.student_id),
+          assigned_user_id: parseInt(assignmentForm.assigned_user_id) || null
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const studentName = students.find(s => s.id == assignmentForm.student_id)?.full_name;
+        alert(`✅ ASSIGNMENT CREATED SUCCESSFULLY!\n\n📚 Title: ${assignmentForm.title}\n👤 Student: ${studentName}\n📅 Due: ${assignmentForm.due_date || 'No deadline'}`);
+        
+        setAssignmentForm({
+          title: '', description: '', due_date: '', max_grade: 100, student_id: '', assigned_user_id: ''
+        });
+        setShowAssignmentModal(false);
+        loadAssignments();
+      } else {
+        const error = await response.json();
+        alert(`❌ Error creating assignment: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Assignment creation error:', error);
+      alert(`❌ Network Error: ${error.message}\n\nPlease check if backend is running on port 8080`);
+    }
+    setLoading(false);
+  };
+
   const students = users.filter(u => u.role === 'student');
   const trainers = users.filter(u => u.role === 'trainer');
   const recruiters = users.filter(u => u.role === 'recruiter');
@@ -130,12 +214,20 @@ const EnhancedUserManagement = () => {
       {/* Header */}
       <div style={styles.header}>
         <h1 style={styles.title}>🚀 Enhanced User Management System</h1>
-        <button 
-          style={styles.createBtn}
-          onClick={() => setShowCreateModal(true)}
-        >
-          ➕ Create New User
-        </button>
+        <div style={styles.headerButtons}>
+          <button 
+            style={styles.createBtn}
+            onClick={() => setShowCreateModal(true)}
+          >
+            ➕ Create New User
+          </button>
+          <button 
+            style={{...styles.createBtn, backgroundColor: '#f59e0b'}}
+            onClick={() => setShowAssignmentModal(true)}
+          >
+            📚 Create Assignment
+          </button>
+        </div>
       </div>
 
       {/* Quick Stats */}
@@ -321,6 +413,102 @@ const EnhancedUserManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Create Assignment Modal */}
+      {showAssignmentModal && (
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            <div style={styles.modalHeader}>
+              <h2>📚 Create New Assignment</h2>
+              <button style={styles.closeBtn} onClick={() => setShowAssignmentModal(false)}>×</button>
+            </div>
+            <div style={styles.modalBody}>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Assignment Title *</label>
+                <input
+                  type="text"
+                  style={styles.input}
+                  value={assignmentForm.title}
+                  onChange={(e) => setAssignmentForm({...assignmentForm, title: e.target.value})}
+                  placeholder="Enter assignment title"
+                />
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Description *</label>
+                <textarea
+                  style={{...styles.input, height: '80px'}}
+                  value={assignmentForm.description}
+                  onChange={(e) => setAssignmentForm({...assignmentForm, description: e.target.value})}
+                  placeholder="Enter assignment description"
+                />
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Assign to Student *</label>
+                <select
+                  style={styles.select}
+                  value={assignmentForm.student_id}
+                  onChange={(e) => setAssignmentForm({...assignmentForm, student_id: e.target.value})}
+                >
+                  <option value="">Select a student</option>
+                  {students.map(student => (
+                    <option key={student.id} value={student.id}>
+                      {student.full_name} ({student.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Assign to Trainer (Optional)</label>
+                <select
+                  style={styles.select}
+                  value={assignmentForm.assigned_user_id}
+                  onChange={(e) => setAssignmentForm({...assignmentForm, assigned_user_id: e.target.value})}
+                >
+                  <option value="">No specific trainer</option>
+                  {trainers.map(trainer => (
+                    <option key={trainer.id} value={trainer.id}>
+                      {trainer.full_name} ({trainer.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Due Date</label>
+                <input
+                  type="date"
+                  style={styles.input}
+                  value={assignmentForm.due_date}
+                  onChange={(e) => setAssignmentForm({...assignmentForm, due_date: e.target.value})}
+                />
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Maximum Grade</label>
+                <input
+                  type="number"
+                  style={styles.input}
+                  value={assignmentForm.max_grade}
+                  onChange={(e) => setAssignmentForm({...assignmentForm, max_grade: parseInt(e.target.value) || 100})}
+                  placeholder="100"
+                  min="1"
+                  max="1000"
+                />
+              </div>
+            </div>
+            <div style={styles.modalFooter}>
+              <button style={styles.cancelBtn} onClick={() => setShowAssignmentModal(false)}>
+                Cancel
+              </button>
+              <button 
+                style={styles.submitBtn} 
+                onClick={handleCreateAssignment}
+                disabled={loading}
+              >
+                {loading ? '⏳ Creating...' : '✅ Create Assignment'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -341,6 +529,10 @@ const styles = {
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     borderRadius: '12px',
     color: 'white'
+  },
+  headerButtons: {
+    display: 'flex',
+    gap: '12px'
   },
   title: {
     margin: 0,

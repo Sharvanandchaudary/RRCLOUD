@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 User Creation API Test</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1e293b;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .success { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
+        .error { background: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
+        .info { background: #dbeafe; color: #1e40af; border: 1px solid #3b82f6; }
+        .login-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Direct User Creation API Test</h1>
+        <p>This tool tests the user creation API directly without going through React. Use this to verify the backend is working.</p>
+        
+        <!-- Login Section -->
+        <div class="login-section">
+            <h3>Step 1: Admin Login</h3>
+            <div class="form-group">
+                <label>Admin Email:</label>
+                <input type="email" id="adminEmail" value="admin@zgenai.com" />
+            </div>
+            <div class="form-group">
+                <label>Admin Password:</label>
+                <input type="password" id="adminPassword" value="admin123" />
+            </div>
+            <button onclick="adminLogin()">🔑 Login as Admin</button>
+            <div id="loginStatus"></div>
+        </div>
+
+        <!-- User Creation Section -->
+        <div id="userSection" style="display: none;">
+            <h3>Step 2: Create User</h3>
+            <div class="form-group">
+                <label>Full Name *:</label>
+                <input type="text" id="userName" placeholder="Test User Name" />
+            </div>
+            <div class="form-group">
+                <label>Email *:</label>
+                <input type="email" id="userEmail" placeholder="testuser@example.com" />
+            </div>
+            <div class="form-group">
+                <label>Phone:</label>
+                <input type="tel" id="userPhone" placeholder="555-123-4567" />
+            </div>
+            <div class="form-group">
+                <label>Role *:</label>
+                <select id="userRole">
+                    <option value="student">👨‍🎓 Student</option>
+                    <option value="trainer">👨‍🏫 Trainer</option>
+                    <option value="recruiter">👥 Recruiter</option>
+                    <option value="admin">⚙️ Admin</option>
+                </select>
+            </div>
+            <button onclick="createUser()" id="createBtn">🚀 Create User</button>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        let authToken = '';
+
+        async function adminLogin() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            const statusDiv = document.getElementById('loginStatus');
+            
+            statusDiv.innerHTML = '<div class="info">🔄 Logging in...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:8080/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    statusDiv.innerHTML = `<div class="success">✅ Login successful!<br>User: ${data.user.full_name} (${data.user.role})</div>`;
+                    document.getElementById('userSection').style.display = 'block';
+                } else {
+                    const error = await response.json();
+                    statusDiv.innerHTML = `<div class="error">❌ Login failed: ${error.error}</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ Network Error: ${error.message}<br><br>Check if backend is running on port 8080</div>`;
+            }
+        }
+
+        async function createUser() {
+            if (!authToken) {
+                alert('Please login first!');
+                return;
+            }
+
+            const name = document.getElementById('userName').value.trim();
+            const email = document.getElementById('userEmail').value.trim();
+            const phone = document.getElementById('userPhone').value.trim();
+            const role = document.getElementById('userRole').value;
+            
+            if (!name || !email || !role) {
+                alert('Please fill in Name, Email, and Role');
+                return;
+            }
+
+            const resultDiv = document.getElementById('result');
+            const createBtn = document.getElementById('createBtn');
+            
+            createBtn.disabled = true;
+            createBtn.textContent = '⏳ Creating User...';
+            resultDiv.innerHTML = '<div class="info">🔄 Creating user...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ name, email, phone, role })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `<div class="success">
+                        ✅ USER CREATED SUCCESSFULLY!<br><br>
+                        <strong>Details:</strong><br>
+                        👤 Name: ${data.user.full_name}<br>
+                        📧 Email: ${data.user.email}<br>
+                        🎭 Role: ${data.user.role.toUpperCase()}<br>
+                        🆔 ID: ${data.user.id}<br>
+                        📞 Phone: ${data.user.phone || 'Not provided'}<br><br>
+                        <strong>Login Credentials:</strong><br>
+                        🔑 Default Password: password123<br>
+                        🌐 Login URL: <a href="http://localhost:3000" target="_blank">http://localhost:3000</a>
+                    </div>`;
+                    
+                    // Clear form
+                    document.getElementById('userName').value = '';
+                    document.getElementById('userEmail').value = '';
+                    document.getElementById('userPhone').value = '';
+                } else {
+                    const errorText = await response.text();
+                    let errorMessage;
+                    try {
+                        const error = JSON.parse(errorText);
+                        errorMessage = error.error || error.message || 'Unknown error';
+                    } catch {
+                        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    resultDiv.innerHTML = `<div class="error">❌ Failed to create user:<br><br>${errorMessage}</div>`;
+                }
+            } catch (error) {
+                console.error('User creation error:', error);
+                resultDiv.innerHTML = `<div class="error">❌ Network Error:<br><br>${error.message}<br><br>
+                    This usually means:<br>
+                    • Backend server is not running on port 8080<br>
+                    • CORS issues (cross-origin request blocked)<br>
+                    • Network connectivity problems<br><br>
+                    Check browser console for more details.
+                </div>`;
+            } finally {
+                createBtn.disabled = false;
+                createBtn.textContent = '🚀 Create User';
+            }
+        }
+
+        // Auto-fill some test data
+        window.onload = function() {
+            document.getElementById('userName').value = 'Test User ' + Date.now().toString().slice(-4);
+            document.getElementById('userEmail').value = 'test' + Date.now().toString().slice(-4) + '@example.com';
+            document.getElementById('userPhone').value = '555-' + Date.now().toString().slice(-4);
+        };
+    </script>
+</body>
+</html>
