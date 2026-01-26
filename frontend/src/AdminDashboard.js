@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import EnhancedUserManagement from './EnhancedUserManagement';
+import UserAssignmentManager from './UserAssignmentManager';
+import NetworkDiagnostics from './NetworkDiagnostics';
 
 export default function AdminDashboard() {
   const [applications, setApplications] = useState([]);
@@ -11,6 +13,7 @@ export default function AdminDashboard() {
   const [password, setPassword] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState('pending');
+  const [currentView, setCurrentView] = useState('dashboard'); // dashboard, userManagement, assignmentManager
   const [showUserModal, setShowUserModal] = useState(false);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [userForm, setUserForm] = useState({ name: '', email: '', phone: '', role: 'student' });
@@ -1493,6 +1496,18 @@ ZgenAI Team`;
               >
                 🚀 Enhanced User Mgmt
               </button>
+              <button 
+                style={styles.tab(activeTab === 'user-assignments')}
+                onClick={() => setActiveTab('user-assignments')}
+              >
+                👥 User Assignments
+              </button>
+              <button 
+                style={styles.tab(activeTab === 'diagnostics')}
+                onClick={() => setActiveTab('diagnostics')}
+              >
+                🔧 Network Fix
+              </button>
             </div>
 
             {/* TAB CONTENT */}
@@ -1503,6 +1518,8 @@ ZgenAI Team`;
               {activeTab === 'users' && renderUserManagement()}
               {activeTab === 'assignments' && renderAssignmentManagement()}
               {activeTab === 'enhanced-users' && <EnhancedUserManagement />}
+              {activeTab === 'user-assignments' && <UserAssignmentManager />}
+              {activeTab === 'diagnostics' && <NetworkDiagnostics />}
             </div>
           </div>
         )}
