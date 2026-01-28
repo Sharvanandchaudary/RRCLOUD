@@ -581,7 +581,7 @@ const getApplications = async (req, res) => {
   try {
     console.log('GET /applications called');
     const result = await db.query(
-      `SELECT * FROM applications ORDER BY created_at DESC`
+      `SELECT id, full_name, email, phone, about_me, resume_path, created_at, status, admin_notes, updated_at, resume_filename, is_approved, approved_date, approved_by FROM applications ORDER BY created_at DESC`
     );
     console.log('Applications found:', result.rowCount);
     
@@ -1884,6 +1884,299 @@ app.get('/health', (req, res) => {
   });
 });
 
+/* -------------------- TASK MANAGEMENT ENDPOINTS -------------------- */
+
+// Get tasks for a student or all tasks for trainers
+app.get('/api/tasks', authenticateToken, async (req, res) => {
+  try {
+    console.log('📋 Fetching tasks for user:', req.user.id, 'Role:', req.user.role);
+    
+    let query;
+    let params;
+    
+    if (req.user.role === 'student') {
+      // Students see only their assigned tasks
+      query = `
+        SELECT t.*, u.full_name as trainer_name,
+               s.id as submission_id, s.content as submission_content, 
+               s.file_url, s.submitted_at, s.grade, s.feedback,
+               CASE 
+                 WHEN s.id IS NOT NULL THEN 
+                   CASE WHEN s.grade IS NOT NULL THEN 'graded' ELSE 'submitted' END
+                 WHEN t.due_date < NOW() THEN 'overdue'
+                 ELSE 'pending'
+               END as status
+        FROM tasks t
+        LEFT JOIN users u ON t.trainer_id = u.id
+        LEFT JOIN task_submissions s ON t.id = s.task_id
+        WHERE t.student_id = $1
+        ORDER BY t.created_at DESC
+      `;
+      params = [req.user.id];
+    } else if (req.user.role === 'trainer' || req.user.role === 'admin') {
+      // Trainers/admins see all tasks they created or all tasks
+      query = `
+        SELECT t.*, 
+               u_student.full_name as student_name,
+               u_trainer.full_name as trainer_name,
+               COUNT(s.id) as submission_count,
+               CASE 
+                 WHEN COUNT(s.id) > 0 AND MAX(s.grade) IS NOT NULL THEN 'graded'
+                 WHEN COUNT(s.id) > 0 THEN 'submitted'
+                 WHEN t.due_date < NOW() THEN 'overdue'
+                 ELSE 'pending'
+               END as status
+        FROM tasks t
+        LEFT JOIN users u_student ON t.student_id = u_student.id
+        LEFT JOIN users u_trainer ON t.trainer_id = u_trainer.id
+        LEFT JOIN task_submissions s ON t.id = s.task_id
+        WHERE ($1 = 'admin' OR t.trainer_id = $2)
+        GROUP BY t.id, u_student.full_name, u_trainer.full_name
+        ORDER BY t.created_at DESC
+      `;
+      params = [req.user.role, req.user.id];
+    } else {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const result = await db.query(query, params);
+    
+    // Format tasks for frontend
+    const tasks = result.rows.map(task => {
+      const formattedTask = {
+        ...task,
+        attachments: task.attachments ? JSON.parse(task.attachments) : []
+      };
+      
+      // Add submission info for students
+      if (task.submission_id) {
+        formattedTask.submission = {
+          id: task.submission_id,
+          content: task.submission_content,
+          file_url: task.file_url,
+          submitted_at: task.submitted_at,
+          grade: task.grade,
+          feedback: task.feedback
+        };
+      }
+      
+      return formattedTask;
+    });
+
+    console.log(`✅ Found ${tasks.length} tasks`);
+    res.json(tasks);
+  } catch (error) {
+    console.error('❌ Error fetching tasks:', error);
+    res.status(500).json({ error: 'Failed to fetch tasks' });
+  }
+});
+
+// Create a new task (trainers/admins only)
+app.post('/api/tasks', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'trainer' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Only trainers and admins can create tasks' });
+    }
+
+    const { title, description, student_id, due_date, max_points = 100, priority = 'medium' } = req.body;
+
+    if (!title || !description || !student_id) {
+      return res.status(400).json({ error: 'Title, description, and student_id are required' });
+    }
+
+    // Verify the student exists
+    const studentCheck = await db.query('SELECT id, full_name FROM users WHERE id = $1 AND role = $2', [student_id, 'student']);
+    if (studentCheck.rows.length === 0) {
+      return res.status(400).json({ error: 'Student not found' });
+    }
+
+    const query = `
+      INSERT INTO tasks (title, description, student_id, trainer_id, due_date, max_points, priority, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+      RETURNING *
+    `;
+
+    const result = await db.query(query, [
+      title,
+      description,
+      student_id,
+      req.user.id,
+      due_date || null,
+      max_points,
+      priority
+    ]);
+
+    console.log('✅ Task created:', result.rows[0]);
+    res.status(201).json({
+      ...result.rows[0],
+      student_name: studentCheck.rows[0].full_name,
+      trainer_name: req.user.full_name
+    });
+  } catch (error) {
+    console.error('❌ Error creating task:', error);
+    res.status(500).json({ error: 'Failed to create task' });
+  }
+});
+
+// Submit a task (students only)
+app.post('/api/tasks/:taskId/submit', authenticateToken, upload.single('file'), async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ error: 'Only students can submit tasks' });
+    }
+
+    const { taskId } = req.params;
+    const { content } = req.body;
+
+    if (!content) {
+      return res.status(400).json({ error: 'Submission content is required' });
+    }
+
+    // Verify the task exists and belongs to the student
+    const taskCheck = await db.query(
+      'SELECT * FROM tasks WHERE id = $1 AND student_id = $2',
+      [taskId, req.user.id]
+    );
+
+    if (taskCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Task not found or not assigned to you' });
+    }
+
+    // Check if already submitted
+    const existingSubmission = await db.query(
+      'SELECT id FROM task_submissions WHERE task_id = $1 AND student_id = $2',
+      [taskId, req.user.id]
+    );
+
+    let fileUrl = null;
+    if (req.file) {
+      // Handle file upload (using multer local storage for now)
+      fileUrl = `/uploads/${req.file.filename}`;
+    }
+
+    if (existingSubmission.rows.length > 0) {
+      // Update existing submission
+      const updateQuery = `
+        UPDATE task_submissions 
+        SET content = $1, file_url = $2, submitted_at = NOW()
+        WHERE task_id = $3 AND student_id = $4
+        RETURNING *
+      `;
+      
+      const result = await db.query(updateQuery, [content, fileUrl, taskId, req.user.id]);
+      console.log('✅ Task submission updated:', result.rows[0]);
+      res.json({ message: 'Task updated successfully', submission: result.rows[0] });
+    } else {
+      // Create new submission
+      const insertQuery = `
+        INSERT INTO task_submissions (task_id, student_id, content, file_url, submitted_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        RETURNING *
+      `;
+      
+      const result = await db.query(insertQuery, [taskId, req.user.id, content, fileUrl]);
+      console.log('✅ Task submitted:', result.rows[0]);
+      res.status(201).json({ message: 'Task submitted successfully', submission: result.rows[0] });
+    }
+  } catch (error) {
+    console.error('❌ Error submitting task:', error);
+    res.status(500).json({ error: 'Failed to submit task' });
+  }
+});
+
+// Get task submissions (for trainers/admins)
+app.get('/api/task-submissions', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'trainer' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const query = `
+      SELECT s.*, t.title as task_title, t.max_points,
+             u.full_name as student_name, u.email as student_email,
+             CASE WHEN s.grade IS NOT NULL THEN 'graded' ELSE 'pending' END as status
+      FROM task_submissions s
+      JOIN tasks t ON s.task_id = t.id
+      JOIN users u ON s.student_id = u.id
+      WHERE ($1 = 'admin' OR t.trainer_id = $2)
+      ORDER BY s.submitted_at DESC
+    `;
+
+    const result = await db.query(query, [req.user.role, req.user.id]);
+    console.log(`✅ Found ${result.rows.length} submissions`);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('❌ Error fetching submissions:', error);
+    res.status(500).json({ error: 'Failed to fetch submissions' });
+  }
+});
+
+// Grade a submission (trainers/admins only)
+app.put('/api/task-submissions/:submissionId/grade', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'trainer' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Only trainers and admins can grade submissions' });
+    }
+
+    const { submissionId } = req.params;
+    const { grade, feedback } = req.body;
+
+    if (!grade || !feedback) {
+      return res.status(400).json({ error: 'Grade and feedback are required' });
+    }
+
+    // Verify submission exists and trainer has access
+    const submissionCheck = await db.query(`
+      SELECT s.*, t.trainer_id 
+      FROM task_submissions s
+      JOIN tasks t ON s.task_id = t.id
+      WHERE s.id = $1 AND ($2 = 'admin' OR t.trainer_id = $3)
+    `, [submissionId, req.user.role, req.user.id]);
+
+    if (submissionCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Submission not found or access denied' });
+    }
+
+    const updateQuery = `
+      UPDATE task_submissions 
+      SET grade = $1, feedback = $2, graded_at = NOW(), graded_by = $3
+      WHERE id = $4
+      RETURNING *
+    `;
+
+    const result = await db.query(updateQuery, [grade, feedback, req.user.id, submissionId]);
+    console.log('✅ Submission graded:', result.rows[0]);
+    res.json({ message: 'Submission graded successfully', submission: result.rows[0] });
+  } catch (error) {
+    console.error('❌ Error grading submission:', error);
+    res.status(500).json({ error: 'Failed to grade submission' });
+  }
+});
+
+// Send email endpoint (for Gmail plugin)
+app.post('/api/send-email', authenticateToken, async (req, res) => {
+  try {
+    const { to, subject, body } = req.body;
+
+    if (!to || !subject || !body) {
+      return res.status(400).json({ error: 'To, subject, and body are required' });
+    }
+
+    // In a real application, you would integrate with Gmail API
+    // For now, we'll simulate the email sending
+    console.log(`📧 Sending email from ${req.user.email} to ${to}`);
+    console.log(`Subject: ${subject}`);
+    console.log(`Body: ${body}`);
+
+    // You can integrate with Gmail API or SMTP here
+    // For now, just return success
+    res.json({ message: 'Email sent successfully' });
+  } catch (error) {
+    console.error('❌ Error sending email:', error);
+    res.status(500).json({ error: 'Failed to send email' });
+  }
+});
+
 /* -------------------- RESET ADMIN (TEMPORARY - FOR SETUP ONLY) -------------------- */
 app.post('/api/admin/reset-credentials', async (req, res) => {
   // This endpoint should be removed in production
@@ -1957,6 +2250,38 @@ const initDB = async () => {
         approved_date TIMESTAMP,
         approved_by VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create tasks table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS tasks (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        trainer_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        due_date TIMESTAMP,
+        max_points INTEGER DEFAULT 100,
+        priority VARCHAR(20) DEFAULT 'medium',
+        attachments TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create task submissions table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS task_submissions (
+        id SERIAL PRIMARY KEY,
+        task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+        student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        content TEXT NOT NULL,
+        file_url VARCHAR(500),
+        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        grade INTEGER,
+        feedback TEXT,
+        graded_at TIMESTAMP,
+        graded_by INTEGER REFERENCES users(id)
       )
     `);
     

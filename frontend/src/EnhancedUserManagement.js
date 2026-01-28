@@ -18,6 +18,10 @@ const EnhancedUserManagement = () => {
   });
   const [loading, setLoading] = useState(false);
 
+  // Force local URLs when running in development mode
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const API_BASE_URL = isLocal ? 'http://localhost:8080' : (process.env.REACT_APP_API_URL || 'http://localhost:8080');
+
   useEffect(() => {
     loadUsers();
     loadAssignments();
@@ -26,7 +30,7 @@ const EnhancedUserManagement = () => {
   const loadUsers = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://localhost:8080/api/users', {
+      const response = await fetch(`${API_BASE_URL}/api/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -41,7 +45,7 @@ const EnhancedUserManagement = () => {
   const loadAssignments = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://localhost:8080/api/assignments', {
+      const response = await fetch(`${API_BASE_URL}/api/assignments`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -76,7 +80,7 @@ const EnhancedUserManagement = () => {
 
       console.log('🚀 Creating user with token:', token.substring(0, 30) + '...');
 
-      const response = await fetch('http://localhost:8080/api/users', {
+      const response = await fetch(`${API_BASE_URL}/api/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +130,7 @@ const EnhancedUserManagement = () => {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://localhost:8080/api/assignments', {
+      const response = await fetch(`${API_BASE_URL}/api/assignments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -168,7 +172,7 @@ const EnhancedUserManagement = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:8080/api/assignments', {
+      const response = await fetch(`${API_BASE_URL}/api/assignments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

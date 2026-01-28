@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import EnhancedUserManagement from './EnhancedUserManagement';
 import UserAssignmentManager from './UserAssignmentManager';
 import NetworkDiagnostics from './NetworkDiagnostics';
+import TrainerTaskManager from './TrainerTaskManager';
 
 export default function AdminDashboard() {
   const [applications, setApplications] = useState([]);
@@ -1503,6 +1504,12 @@ ZgenAI Team`;
                 👥 User Assignments
               </button>
               <button 
+                style={styles.tab(activeTab === 'trainer-tasks')}
+                onClick={() => setActiveTab('trainer-tasks')}
+              >
+                👨‍🏫 Trainer Tasks
+              </button>
+              <button 
                 style={styles.tab(activeTab === 'diagnostics')}
                 onClick={() => setActiveTab('diagnostics')}
               >
@@ -1519,6 +1526,7 @@ ZgenAI Team`;
               {activeTab === 'assignments' && renderAssignmentManagement()}
               {activeTab === 'enhanced-users' && <EnhancedUserManagement />}
               {activeTab === 'user-assignments' && <UserAssignmentManager />}
+              {activeTab === 'trainer-tasks' && <TrainerTaskManager />}
               {activeTab === 'diagnostics' && <NetworkDiagnostics />}
             </div>
           </div>

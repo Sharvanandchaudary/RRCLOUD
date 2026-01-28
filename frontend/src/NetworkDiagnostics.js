@@ -5,7 +5,9 @@ const NetworkDiagnostics = () => {
   const [loading, setLoading] = useState(false);
   const [testResults, setTestResults] = useState([]);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+  // Force local URLs when running in development mode
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const API_BASE_URL = isLocal ? 'http://localhost:8080' : (process.env.REACT_APP_API_URL || 'http://localhost:8080');
 
   const runDiagnostics = async () => {
     setLoading(true);
@@ -81,10 +83,12 @@ const NetworkDiagnostics = () => {
         test: 'Network Information', 
         status: 'info', 
         message: `
+Running Mode: ${isLocal ? '🏠 LOCAL DEVELOPMENT' : '☁️ PRODUCTION'}
 Frontend URL: ${window.location.origin}
 Backend URL: ${API_BASE_URL}
-User Agent: ${navigator.userAgent}
+Production Backend: ${process.env.REACT_APP_API_URL || 'Not configured'}
 Connection: ${navigator.onLine ? 'Online' : 'Offline'}
+Browser: ${navigator.userAgent}
         `.trim()
       });
       setTestResults([...results]);

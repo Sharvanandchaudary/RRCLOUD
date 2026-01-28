@@ -25,7 +25,7 @@ gcloud run deploy rrcloud-backend \
   --platform managed \
   --region $REGION \
   --allow-unauthenticated \
-  --port 5001 \
+  --port 8080 \
   --memory 512Mi
 
 BACKEND_URL=$(gcloud run services describe rrcloud-backend --platform managed --region $REGION --format 'value(status.url)')

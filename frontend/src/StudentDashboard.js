@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import TaskManager from './TaskManager';
+import GmailPlugin from './GmailPlugin';
 
 function StudentDashboard() {
   const navigate = useNavigate();
@@ -530,7 +532,7 @@ function StudentDashboard() {
 
       {/* Navigation Tabs */}
       <div style={styles.tabContainer}>
-        {['dashboard', 'tasks', 'submit-task', 'interviews', 'analytics', 'applications', 'calendar', 'gmail', 'data', 'history'].map((tab) => (
+        {['dashboard', 'my-tasks', 'gmail-plugin', 'tasks', 'submit-task', 'interviews', 'analytics', 'applications', 'calendar', 'gmail', 'data', 'history'].map((tab) => (
           <button
             key={tab}
             style={{
@@ -540,6 +542,8 @@ function StudentDashboard() {
             onClick={() => setActiveTab(tab)}
           >
             {tab === 'dashboard' && '📊 Dashboard'}
+            {tab === 'my-tasks' && '📋 My Tasks'}
+            {tab === 'gmail-plugin' && '📧 Gmail Plugin'}
             {tab === 'tasks' && '📝 Task Management'}
             {tab === 'submit-task' && '📤 Submit Task'}
             {tab === 'interviews' && '🎯 Interviews'}
@@ -549,8 +553,6 @@ function StudentDashboard() {
             {tab === 'gmail' && '📧 Gmail'}
             {tab === 'data' && '💾 Data Hub'}
             {tab === 'history' && '📚 History'}
-            {tab === 'interviews' && '📞 Interviews'}
-            {tab === 'gmail' && '📧 Gmail'}
           </button>
         ))}
       </div>
@@ -558,6 +560,8 @@ function StudentDashboard() {
       {/* Main Content */}
       <div style={styles.mainContent}>
         {activeTab === 'dashboard' && renderDashboard()}
+        {activeTab === 'my-tasks' && <TaskManager />}
+        {activeTab === 'gmail-plugin' && <GmailPlugin />}
         {activeTab === 'tasks' && renderTaskManagement()}
         {activeTab === 'submit-task' && renderTaskSubmission()}
         {activeTab === 'interviews' && renderInterviews()}

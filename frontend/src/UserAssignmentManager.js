@@ -14,7 +14,9 @@ const UserAssignmentManager = () => {
   const [assignmentType, setAssignmentType] = useState('trainer-student');
   const [notes, setNotes] = useState('');
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+  // Force local URLs when running in development mode
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const API_BASE_URL = isLocal ? 'http://localhost:8080' : (process.env.REACT_APP_API_URL || 'http://localhost:8080');
 
   useEffect(() => {
     fetchUsers();
