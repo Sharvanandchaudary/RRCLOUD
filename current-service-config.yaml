@@ -1,0 +1,81 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  annotations:
+    run.googleapis.com/build-enable-automatic-updates: 'false'
+    run.googleapis.com/build-id: 455bac43-d771-468d-8fd6-1aa1176f18a4
+    run.googleapis.com/build-image-uri: us-central1-docker.pkg.dev/rrcloud-platform/cloud-run-source-deploy/rrcloud-backend
+    run.googleapis.com/build-name: projects/415414350152/locations/us-central1/builds/455bac43-d771-468d-8fd6-1aa1176f18a4
+    run.googleapis.com/build-source-location: gs://run-sources-rrcloud-platform-us-central1/services/rrcloud-backend/1769243251.964815-6033039dbd5f4642bd81a87bd6a11849.zip#1769243254211838
+    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress-status: all
+    run.googleapis.com/maxScale: '20'
+    run.googleapis.com/urls: '["https://rrcloud-backend-415414350152.us-central1.run.app","https://rrcloud-backend-nsmgws4u4a-uc.a.run.app"]'
+  labels:
+    cloud.googleapis.com/location: us-central1
+  name: rrcloud-backend
+  namespace: '415414350152'
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: '10'
+        run.googleapis.com/client-name: gcloud
+        run.googleapis.com/client-version: 552.0.0
+        run.googleapis.com/cloudsql-instances: rrcloud-platform:us-central1:rrcloud-db
+        run.googleapis.com/startup-cpu-boost: 'true'
+      labels:
+        client.knative.dev/nonce: rzwkrmjbmp
+        run.googleapis.com/startupProbeType: Default
+    spec:
+      containerConcurrency: 80
+      containers:
+      - env:
+        - name: DB_HOST
+          value: /cloudsql/rrcloud-platform:us-central1:rrcloud-db
+        - name: DB_PORT
+          value: '5432'
+        - name: DB_NAME
+          value: sharvanandchaudhary
+        - name: DB_USER
+          value: postgres
+        - name: DB_PASSWORD
+          value: Admin@123456
+        - name: NODE_ENV
+          value: production
+        - name: FRONTEND_URL
+        - name: SMTP_HOST
+          value: smtp.gmail.com
+        - name: SMTP_PORT
+          value: '587'
+        - name: SMTP_SECURE
+          value: 'false'
+        - name: SMTP_USER
+          value: admin@zgenai.org
+        - name: SMTP_PASSWORD
+        - name: JWT_SECRET
+        - name: GCS_PROJECT_ID
+          value: rrcloud-platform
+        - name: GCS_BUCKET_NAME
+          value: rrcloud-resumes-bucket
+        image: gcr.io/rrcloud-platform/rrcloud-backend:9fce4e903f5bee60a70f595272ba12e319f80e72
+        ports:
+        - containerPort: 8080
+          name: http1
+        resources:
+          limits:
+            cpu: '1'
+            memory: 512Mi
+        startupProbe:
+          failureThreshold: 1
+          periodSeconds: 240
+          tcpSocket:
+            port: 8080
+          timeoutSeconds: 240
+      serviceAccountName: 415414350152-compute@developer.gserviceaccount.com
+      timeoutSeconds: 900
+  traffic:
+  - percent: 100
+    revisionName: rrcloud-backend-00048-vtd
+  - latestRevision: true
+    tag: latest

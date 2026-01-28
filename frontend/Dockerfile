@@ -25,9 +25,13 @@ COPY --from=builder /app/build /usr/share/nginx/html
 # Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Create startup script to inject runtime config
+# Set default PORT for Cloud Run
+ENV PORT=8080
+
+# Create startup script to inject runtime config and handle PORT env var
 RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
     echo 'echo "window.RUNTIME_CONFIG = { BACKEND_URL: \"$BACKEND_URL\" };" > /usr/share/nginx/html/runtime-config.js' >> /docker-entrypoint.sh && \
+    echo 'envsubst "\$PORT" < /etc/nginx/conf.d/default.conf > /etc/nginx/conf.d/default.conf.tmp && mv /etc/nginx/conf.d/default.conf.tmp /etc/nginx/conf.d/default.conf' >> /docker-entrypoint.sh && \
     echo 'nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
     chmod +x /docker-entrypoint.sh
 

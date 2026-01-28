@@ -1,62 +1,118 @@
 import React, { useState, useEffect } from 'react';
-import EnhancedUserManagement from './EnhancedUserManagement';
-import UserAssignmentManager from './UserAssignmentManager';
-import NetworkDiagnostics from './NetworkDiagnostics';
-import TrainerTaskManager from './TrainerTaskManager';
 
 export default function AdminDashboard() {
   const [applications, setApplications] = useState([]);
   const [users, setUsers] = useState([]);
-  const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedApp, setSelectedApp] = useState(null);
   const [password, setPassword] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [activeTab, setActiveTab] = useState('pending');
-  const [currentView, setCurrentView] = useState('dashboard'); // dashboard, userManagement, assignmentManager
+  const [activeTab, setActiveTab] = useState('applications');
+  const [currentView, setCurrentView] = useState('applications'); // applications, users, assignments
   const [showUserModal, setShowUserModal] = useState(false);
-  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [userForm, setUserForm] = useState({ name: '', email: '', phone: '', role: 'student' });
-  const [assignmentForm, setAssignmentForm] = useState({ student_id: '', assigned_user_id: '', assigned_user_role: 'trainer' });
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedUsers, setSelectedUsers] = useState([]);
-  const [emailMessage, setEmailMessage] = useState('');
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  
+  // Authentication check
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
 
   useEffect(() => {
-    loadApplications();
-    loadUsers();
-    loadAssignments();
+    checkAuthentication();
   }, []);
 
-  const loadUsers = async () => {
-    try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        console.error('No auth token found');
-        return;
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadApplications();
+      if (currentView === 'users') {
+        loadUsers();
       }
-      
+    }
+  }, [isAuthenticated, currentView]);
+
+  const checkAuthentication = () => {
+    const token = localStorage.getItem('auth_token') || localStorage.getItem('authToken');
+    const adminEmail = localStorage.getItem('userEmail');
+    
+    console.log('🔐 Auth Check:', { 
+      hasToken: !!token, 
+      adminEmail, 
+      tokenPreview: token ? token.substring(0, 20) + '...' : null 
+    });
+    
+    if (token && adminEmail) {
+      setAuthToken(token);
+      setIsAuthenticated(true);
+    } else {
+      setError('Please login as admin first');
+      setIsAuthenticated(false);
+    }
+  };
+
+  const getAuthHeaders = () => {
+    return {
+      'Authorization': `Bearer ${authToken}`,
+      'Content-Type': 'application/json'
+    };
+  };
+
+  const loadApplications = async () => {
+    try {
+      setLoading(true);
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const res = await fetch(`${backendUrl}/api/applications`);
+      if (res.ok) {
+        const data = await res.json();
+        setApplications(data);
+      } else {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+    } catch (err) {
+      console.error('Error loading applications:', err);
+      setError('Failed to load applications: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadUsers = async () => {
+    if (!isAuthenticated) {
+      console.log('❌ Not authenticated, skipping user load');
+      return;
+    }
+    
+    try {
+      setLoading(true);
       const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
       const url = `${backendUrl}/api/users`;
       
+      console.log('🔄 Loading users from:', url);
+      console.log('🔑 Using headers:', getAuthHeaders());
+      
       const res = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: getAuthHeaders()
       });
+      
+      console.log('📡 Users API Response:', res.status, res.statusText);
+      
       if (res.ok) {
         const data = await res.json();
-        setUsers(data.users || []);
+        console.log('✅ Users loaded:', data);
+        setUsers(data.users || data || []);
       } else {
-        console.error('Failed to load users:', res.status, res.statusText);
+        const errorText = await res.text();
+        console.error('❌ Failed to load users:', res.status, errorText);
+        setError(`Failed to fetch users: HTTP ${res.status}: ${res.statusText}`);
       }
     } catch (err) {
-      console.error('Error loading users:', err);
-      setError('Failed to load users: ' + err.message);
+      console.error('💥 Error loading users:', err);
+      setError('Network error loading users: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
