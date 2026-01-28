@@ -1084,6 +1084,9 @@ function verifyToken(req, res, next) {
   }
 }
 
+// Alias for authenticateToken - same functionality as verifyToken
+const authenticateToken = verifyToken;
+
 app.post('/auth/login', async (req, res) => {
   const { email, password, role } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'email and password required' });
