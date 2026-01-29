@@ -29,7 +29,11 @@ export default function UnifiedLogin() {
         
         // Store token + user in localStorage
         if (data.token) localStorage.setItem('auth_token', data.token);
-        if (data.user) localStorage.setItem('auth_user', JSON.stringify(data.user));
+        if (data.user) {
+          localStorage.setItem('auth_user', JSON.stringify(data.user));
+          localStorage.setItem('userEmail', data.user.email); // Also store email directly
+          localStorage.setItem('userRole', data.user.role);   // Also store role directly
+        }
         
         // Route based on role
         switch (role) {

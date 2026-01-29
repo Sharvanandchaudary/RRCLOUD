@@ -476,6 +476,29 @@ async function ensureDatabase() {
       `);
     }
 
+    // Create user_assignments table for student-trainer-recruiter assignments
+    const checkUserAssignments = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'user_assignments'
+      )
+    `);
+    
+    if (!checkUserAssignments.rows[0].exists) {
+      console.log('Creating user_assignments table...');
+      await db.query(`
+        CREATE TABLE user_assignments (
+          id SERIAL PRIMARY KEY,
+          student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          trainer_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          recruiter_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+    }
+
     // Create interview_calls table for student entries
     const checkInterviewCalls = await db.query(`
       SELECT EXISTS (
@@ -2300,6 +2323,108 @@ const initDB = async () => {
     console.error('❌ Database initialization error:', err.message);
   }
 };
+
+// User Assignment Endpoints
+app.post('/api/assignments', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    if (userRole !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { student_id, trainer_id, recruiter_id } = req.body;
+    
+    if (!student_id) {
+      return res.status(400).json({ error: 'Student ID is required' });
+    }
+
+    // Check if assignment already exists
+    const existing = await db.query(`
+      SELECT * FROM user_assignments 
+      WHERE student_id = $1 AND (trainer_id = $2 OR recruiter_id = $3)
+    `, [student_id, trainer_id, recruiter_id]);
+
+    if (existing.rowCount > 0) {
+      return res.status(400).json({ error: 'Assignment already exists' });
+    }
+
+    // Create assignment
+    const result = await db.query(`
+      INSERT INTO user_assignments (student_id, trainer_id, recruiter_id, created_at)
+      VALUES ($1, $2, $3, CURRENT_TIMESTAMP) RETURNING *
+    `, [student_id, trainer_id || null, recruiter_id || null]);
+
+    // Get assignment with user details
+    const assignment = await db.query(`
+      SELECT ua.*, 
+             s.full_name as student_name, s.email as student_email,
+             t.full_name as trainer_name, t.email as trainer_email,
+             r.full_name as recruiter_name, r.email as recruiter_email
+      FROM user_assignments ua
+      JOIN users s ON ua.student_id = s.id
+      LEFT JOIN users t ON ua.trainer_id = t.id
+      LEFT JOIN users r ON ua.recruiter_id = r.id
+      WHERE ua.id = $1
+    `, [result.rows[0].id]);
+
+    res.json({ 
+      message: 'Assignment created successfully',
+      assignment: assignment.rows[0] 
+    });
+  } catch (error) {
+    console.error('Assignment creation error:', error);
+    res.status(500).json({ error: 'Failed to create assignment' });
+  }
+});
+
+// Get all assignments
+app.get('/api/assignments', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    if (userRole !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const assignments = await db.query(`
+      SELECT ua.*, 
+             s.full_name as student_name, s.email as student_email,
+             t.full_name as trainer_name, t.email as trainer_email,
+             r.full_name as recruiter_name, r.email as recruiter_email
+      FROM user_assignments ua
+      JOIN users s ON ua.student_id = s.id
+      LEFT JOIN users t ON ua.trainer_id = t.id
+      LEFT JOIN users r ON ua.recruiter_id = r.id
+      ORDER BY ua.created_at DESC
+    `);
+
+    res.json(assignments.rows);
+  } catch (error) {
+    console.error('Assignments fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch assignments' });
+  }
+});
+
+// Delete assignment
+app.delete('/api/assignments/:id', verifyToken, async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    if (userRole !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    const result = await db.query('DELETE FROM user_assignments WHERE id = $1 RETURNING *', [id]);
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Assignment not found' });
+    }
+
+    res.json({ message: 'Assignment deleted successfully' });
+  } catch (error) {
+    console.error('Assignment deletion error:', error);
+    res.status(500).json({ error: 'Failed to delete assignment' });
+  }
+});
 
 // Initialize before starting server
 // v2.2 - Force backend rebuild with defaults
