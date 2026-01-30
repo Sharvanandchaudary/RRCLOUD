@@ -2426,6 +2426,72 @@ app.delete('/api/assignments/:id', verifyToken, async (req, res) => {
   }
 });
 
+// Test email endpoint (Admin only) 
+app.post('/api/test-email', verifyToken, async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+
+  const { email, subject, message } = req.body;
+  
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    console.log('Testing email service...');
+    console.log('SMTP Config:', {
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: process.env.SMTP_PORT || 587,
+      secure: process.env.SMTP_SECURE === 'true' || false,
+      user: process.env.SMTP_USER || 'admin@zgenai.org',
+      hasPassword: !!(process.env.SMTP_PASSWORD)
+    });
+
+    const mailOptions = {
+      from: process.env.SMTP_USER || 'admin@zgenai.org',
+      to: email,
+      subject: subject || 'Test Email from ZgenAI Admin',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8f9fa; padding: 20px; border-radius: 10px;">
+          <h2 style="color: #28a745; text-align: center;">✅ Email Service Test</h2>
+          <p>${message || 'This is a test email to verify the SMTP configuration is working properly.'}</p>
+          <p>If you received this email, the SMTP service is configured correctly.</p>
+          <div style="text-align: center; margin-top: 20px;">
+            <small style="color: #666;">Sent from ZgenAI Admin Dashboard</small>
+          </div>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`Test email sent successfully to ${email}`);
+    
+    res.json({ 
+      success: true,
+      message: `Test email sent successfully to ${email}`,
+      smtpConfig: {
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: process.env.SMTP_PORT || 587,
+        user: process.env.SMTP_USER || 'admin@zgenai.org',
+        hasPassword: !!(process.env.SMTP_PASSWORD)
+      }
+    });
+  } catch (error) {
+    console.error('Test email failed:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message,
+      smtpConfig: {
+        host: process.env.SMTP_HOST || 'smtp.gmail.com', 
+        port: process.env.SMTP_PORT || 587,
+        user: process.env.SMTP_USER || 'admin@zgenai.org',
+        hasPassword: !!(process.env.SMTP_PASSWORD)
+      }
+    });
+  }
+});
+
 // Initialize before starting server
 // v2.2 - Force backend rebuild with defaults
 ensureDatabase().finally(() => {

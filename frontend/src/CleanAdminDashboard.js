@@ -16,6 +16,9 @@ export default function CleanAdminDashboard() {
   const [assignments, setAssignments] = useState([]);
   const [trainers, setTrainers] = useState([]);
   const [recruiters, setRecruiters] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [showAssignmentDetails, setShowAssignmentDetails] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -24,6 +27,7 @@ export default function CleanAdminDashboard() {
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [testEmail, setTestEmail] = useState('');
   
   // Authentication
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -161,6 +165,7 @@ export default function CleanAdminDashboard() {
       if (res.ok) {
         const data = await res.json();
         const allUsers = data.users || data || [];
+        setStudents(allUsers.filter(user => user.role === 'student'));
         setTrainers(allUsers.filter(user => user.role === 'trainer'));
         setRecruiters(allUsers.filter(user => user.role === 'recruiter'));
       }
@@ -186,6 +191,42 @@ export default function CleanAdminDashboard() {
     } catch (err) {
       console.log('Error loading assignments:', err);
       setAssignments([]);
+    }
+  };
+
+  const testEmailService = async () => {
+    if (!testEmail) {
+      alert('Please enter an email address to test');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const res = await fetch(`${backendUrl}/api/test-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({
+          email: testEmail,
+          subject: 'Email Service Test - ZgenAI Admin',
+          message: 'This is a test email to verify that the SMTP configuration is working properly. If you received this, email service is operational!'
+        })
+      });
+      
+      const result = await res.json();
+      
+      if (result.success) {
+        alert(`✅ Test email sent successfully to ${testEmail}!\\n\\nSMTP Config:\\nHost: ${result.smtpConfig.host}\\nUser: ${result.smtpConfig.user}\\nHas Password: ${result.smtpConfig.hasPassword}`);
+      } else {
+        alert(`❌ Test email failed: ${result.error}\\n\\nSMTP Config:\\nHost: ${result.smtpConfig.host}\\nUser: ${result.smtpConfig.user}\\nHas Password: ${result.smtpConfig.hasPassword}`);
+      }
+    } catch (err) {
+      alert('Error testing email: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -217,6 +258,31 @@ export default function CleanAdminDashboard() {
     } catch (err) {
       console.error('💥 Error creating user:', err);
       setError('Network error creating user: ' + err.message);
+    }
+  };
+
+  const deleteUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const res = await fetch(`${backendUrl}/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      
+      if (res.ok) {
+        await loadUsers();
+        await loadTrainersAndRecruiters(); // Refresh the dropdowns
+        alert('User deleted successfully!');
+      } else {
+        const errorText = await res.text();
+        setError(`Failed to delete user: ${errorText}`);
+      }
+    } catch (err) {
+      setError('Error deleting user: ' + err.message);
     }
   };
 
@@ -475,6 +541,16 @@ export default function CleanAdminDashboard() {
             >
               🔗 Assignments ({assignments.length})
             </button>
+            <button
+              onClick={() => setCurrentView('email-test')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                currentView === 'email-test'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              📧 Test Email
+            </button>
           </div>
           
           {error && (
@@ -685,20 +761,35 @@ export default function CleanAdminDashboard() {
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Phone</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Role</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Created</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredUsers.map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 text-sm text-gray-900">{user.name}</td>
-                      <td className="px-4 py-4 text-sm text-gray-900">{user.email}</td>
-                      <td className="px-4 py-4 text-sm text-gray-900">{user.phone}</td>
+                      <td className="px-4 py-4 text-sm text-gray-900 font-medium">{user.name}</td>
+                      <td className="px-4 py-4 text-sm text-gray-900">
+                        <a href={`mailto:${user.email}`} className="text-blue-600 hover:underline">
+                          {user.email}
+                        </a>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-900">
+                        {user.phone ? (
+                          <a href={`tel:${user.phone}`} className="text-blue-600 hover:underline">
+                            {user.phone}
+                          </a>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
                       <td className="px-4 py-4">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                           user.role === 'trainer' 
                             ? 'bg-blue-100 text-blue-800'
                             : user.role === 'recruiter'
                             ? 'bg-purple-100 text-purple-800'
+                            : user.role === 'admin'
+                            ? 'bg-red-100 text-red-800'
                             : 'bg-gray-100 text-gray-800'
                         }`}>
                           {user.role}
@@ -706,6 +797,29 @@ export default function CleanAdminDashboard() {
                       </td>
                       <td className="px-4 py-4 text-sm text-gray-500">
                         {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                      </td>
+                      <td className="px-4 py-4 text-sm">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(`Name: ${user.name}\nEmail: ${user.email}\nPhone: ${user.phone || 'N/A'}\nRole: ${user.role}\nCreated: ${user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}`);
+                              alert('User details copied to clipboard!');
+                            }}
+                            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
+                            title="Copy user details"
+                          >
+                            📋 Copy
+                          </button>
+                          {user.role !== 'admin' && (
+                            <button
+                              onClick={() => deleteUser(user.id)}
+                              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm"
+                              title="Delete user permanently"
+                            >
+                              🗑️ Delete
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -719,13 +833,23 @@ export default function CleanAdminDashboard() {
         {currentView === 'assignments' && (
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">User Assignments</h2>
-              <button
-                onClick={() => setShowAssignmentModal(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-              >
-                + Create Assignment
-              </button>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">User Assignments</h2>
+                <p className="text-gray-600 text-sm mt-1">
+                  Connect students with trainers and recruiters • {assignments.length} assignments
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <div className="text-sm bg-gray-50 px-3 py-2 rounded-lg">
+                  👨‍🎓 {students.length} Students • 👨‍🏫 {trainers.length} Trainers • 💼 {recruiters.length} Recruiters
+                </div>
+                <button
+                  onClick={() => setShowAssignmentModal(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium"
+                >
+                  + Create Assignment
+                </button>
+              </div>
             </div>
 
             {loading && <div className="text-center py-4">Loading assignments...</div>}
@@ -938,46 +1062,122 @@ export default function CleanAdminDashboard() {
         {/* Create Assignment Modal */}
         {showAssignmentModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-              <h3 className="text-lg font-bold mb-4">Create User Assignment</h3>
-              <div className="space-y-4">
-                <select
-                  value={assignmentForm.student_id}
-                  onChange={(e) => setAssignmentForm({...assignmentForm, student_id: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="">Select Student *</option>
-                  {users.filter(user => user.role === 'student').map(student => (
-                    <option key={student.id} value={student.id}>{student.name} ({student.email})</option>
-                  ))}
-                </select>
-                
-                <select
-                  value={assignmentForm.trainer_id}
-                  onChange={(e) => setAssignmentForm({...assignmentForm, trainer_id: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="">Select Trainer (Optional)</option>
-                  {trainers.map(trainer => (
-                    <option key={trainer.id} value={trainer.id}>{trainer.name} ({trainer.email})</option>
-                  ))}
-                </select>
-                
-                <select
-                  value={assignmentForm.recruiter_id}
-                  onChange={(e) => setAssignmentForm({...assignmentForm, recruiter_id: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="">Select Recruiter (Optional)</option>
-                  {recruiters.map(recruiter => (
-                    <option key={recruiter.id} value={recruiter.id}>{recruiter.name} ({recruiter.email})</option>
-                  ))}
-                </select>
-                
-                <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded">
-                  <strong>Note:</strong> You must select at least one trainer or recruiter to create an assignment.
+            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
+              <h3 className="text-xl font-bold mb-6 text-center">🔗 Create User Assignment</h3>
+              
+              <div className="grid md:grid-cols-3 gap-6">
+                {/* Students Column */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-800 flex items-center">
+                    👨‍🎓 Select Student *
+                    <span className="ml-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">({students.length})</span>
+                  </h4>
+                  <select
+                    value={assignmentForm.student_id}
+                    onChange={(e) => {
+                      const studentId = e.target.value;
+                      const student = students.find(s => s.id.toString() === studentId);
+                      setAssignmentForm({...assignmentForm, student_id: studentId});
+                      setSelectedStudent(student);
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Choose student...</option>
+                    {students.map(student => (
+                      <option key={student.id} value={student.id}>
+                        {student.name}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedStudent && (
+                    <div className="text-xs bg-gray-50 p-2 rounded">
+                      <div className="font-medium">{selectedStudent.name}</div>
+                      <div className="text-gray-600">{selectedStudent.email}</div>
+                      {selectedStudent.phone && <div className="text-gray-600">{selectedStudent.phone}</div>}
+                    </div>
+                  )}
+                </div>
+
+                {/* Trainers Column */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-800 flex items-center">
+                    👨‍🏫 Assign Trainer
+                    <span className="ml-2 text-sm bg-green-100 text-green-800 px-2 py-1 rounded">({trainers.length})</span>
+                  </h4>
+                  <select
+                    value={assignmentForm.trainer_id}
+                    onChange={(e) => setAssignmentForm({...assignmentForm, trainer_id: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="">No trainer assigned</option>
+                    {trainers.map(trainer => (
+                      <option key={trainer.id} value={trainer.id}>
+                        {trainer.name}
+                      </option>
+                    ))}
+                  </select>
+                  {assignmentForm.trainer_id && (
+                    <div className="text-xs bg-green-50 p-2 rounded">
+                      <div className="font-medium">{trainers.find(t => t.id.toString() === assignmentForm.trainer_id)?.name}</div>
+                      <div className="text-gray-600">{trainers.find(t => t.id.toString() === assignmentForm.trainer_id)?.email}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Recruiters Column */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-800 flex items-center">
+                    💼 Assign Recruiter
+                    <span className="ml-2 text-sm bg-purple-100 text-purple-800 px-2 py-1 rounded">({recruiters.length})</span>
+                  </h4>
+                  <select
+                    value={assignmentForm.recruiter_id}
+                    onChange={(e) => setAssignmentForm({...assignmentForm, recruiter_id: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  >
+                    <option value="">No recruiter assigned</option>
+                    {recruiters.map(recruiter => (
+                      <option key={recruiter.id} value={recruiter.id}>
+                        {recruiter.name}
+                      </option>
+                    ))}
+                  </select>
+                  {assignmentForm.recruiter_id && (
+                    <div className="text-xs bg-purple-50 p-2 rounded">
+                      <div className="font-medium">{recruiters.find(r => r.id.toString() === assignmentForm.recruiter_id)?.name}</div>
+                      <div className="text-gray-600">{recruiters.find(r => r.id.toString() === assignmentForm.recruiter_id)?.email}</div>
+                    </div>
+                  )}
                 </div>
               </div>
+              
+              {/* Assignment Preview */}
+              {assignmentForm.student_id && (assignmentForm.trainer_id || assignmentForm.recruiter_id) && (
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h5 className="font-semibold text-blue-800 mb-2">📋 Assignment Preview:</h5>
+                  <div className="text-sm text-blue-700">
+                    <div><strong>Student:</strong> {selectedStudent?.name}</div>
+                    {assignmentForm.trainer_id && (
+                      <div><strong>Trainer:</strong> {trainers.find(t => t.id.toString() === assignmentForm.trainer_id)?.name}</div>
+                    )}
+                    {assignmentForm.recruiter_id && (
+                      <div><strong>Recruiter:</strong> {recruiters.find(r => r.id.toString() === assignmentForm.recruiter_id)?.name}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {!assignmentForm.student_id && (
+                <div className="mt-4 text-center text-gray-500 text-sm">
+                  👆 Please select a student first
+                </div>
+              )}
+              
+              {assignmentForm.student_id && !assignmentForm.trainer_id && !assignmentForm.recruiter_id && (
+                <div className="mt-4 text-center text-orange-600 text-sm bg-orange-50 p-3 rounded">
+                  ⚠️ Please assign at least one trainer or recruiter to this student
+                </div>
+              )}
               
               <div className="flex gap-2 mt-6">
                 <button
@@ -996,6 +1196,62 @@ export default function CleanAdminDashboard() {
                 >
                   Cancel
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Email Test View */}
+        {currentView === 'email-test' && (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">📧 Email Service Test</h2>
+            </div>
+            
+            <div className="max-w-md mx-auto">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h3 className="font-semibold text-blue-800 mb-2">🔍 Email Service Diagnostics</h3>
+                <p className="text-blue-700 text-sm">
+                  Use this tool to test if the email service is working correctly. 
+                  This will send a test email to verify SMTP configuration.
+                </p>
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Test Email Address
+                </label>
+                <input
+                  type="email"
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                  placeholder="Enter email address to test..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={testEmailService}
+                  disabled={loading || !testEmail}
+                  className={`flex-1 py-3 px-4 rounded-lg font-medium ${
+                    loading || !testEmail
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-green-600 text-white hover:bg-green-700'
+                  }`}
+                >
+                  {loading ? '⏳ Sending...' : '🚀 Send Test Email'}
+                </button>
+              </div>
+              
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
+                <p><strong>What this test does:</strong></p>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>Checks SMTP server connection</li>
+                  <li>Verifies authentication credentials</li>
+                  <li>Sends a test email with formatted HTML content</li>
+                  <li>Reports back configuration status</li>
+                </ul>
               </div>
             </div>
           </div>
