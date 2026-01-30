@@ -158,6 +158,7 @@ export default function CleanAdminDashboard() {
   const loadTrainersAndRecruiters = async () => {
     try {
       const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      console.log('🔄 Loading users for assignment dropdowns...');
       const res = await fetch(`${backendUrl}/api/users`, {
         headers: getAuthHeaders()
       });
@@ -165,12 +166,24 @@ export default function CleanAdminDashboard() {
       if (res.ok) {
         const data = await res.json();
         const allUsers = data.users || data || [];
-        setStudents(allUsers.filter(user => user.role === 'student'));
-        setTrainers(allUsers.filter(user => user.role === 'trainer'));
-        setRecruiters(allUsers.filter(user => user.role === 'recruiter'));
+        console.log('📊 Total users loaded:', allUsers.length);
+        
+        const studentsList = allUsers.filter(user => user.role === 'student');
+        const trainersList = allUsers.filter(user => user.role === 'trainer');
+        const recruitersList = allUsers.filter(user => user.role === 'recruiter');
+        
+        console.log('👨‍🎓 Students:', studentsList.length);
+        console.log('👨‍🏫 Trainers:', trainersList.length);
+        console.log('💼 Recruiters:', recruitersList.length);
+        
+        setStudents(studentsList);
+        setTrainers(trainersList);
+        setRecruiters(recruitersList);
+      } else {
+        console.error('❌ Failed to load users for dropdowns:', res.status);
       }
     } catch (err) {
-      console.error('Error loading trainers/recruiters:', err);
+      console.error('❌ Error loading trainers/recruiters:', err);
     }
   };
 
@@ -844,7 +857,10 @@ export default function CleanAdminDashboard() {
                   👨‍🎓 {students.length} Students • 👨‍🏫 {trainers.length} Trainers • 💼 {recruiters.length} Recruiters
                 </div>
                 <button
-                  onClick={() => setShowAssignmentModal(true)}
+                  onClick={() => {
+                    setShowAssignmentModal(true);
+                    loadTrainersAndRecruiters(); // Reload data when opening modal
+                  }}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium"
                 >
                   + Create Assignment
