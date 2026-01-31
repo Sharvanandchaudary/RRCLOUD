@@ -2492,6 +2492,56 @@ app.post('/api/test-email', verifyToken, async (req, res) => {
   }
 });
 
+// Debug endpoint to add test users (REMOVE IN PRODUCTION)
+app.post('/api/debug/create-test-users', async (req, res) => {
+  try {
+    const defaultPassword = 'password123';
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+    
+    const testUsers = [
+      { email: 'student1@test.com', name: 'John Student', role: 'student', phone: '1111111111' },
+      { email: 'student2@test.com', name: 'Jane Student', role: 'student', phone: '1111111112' },
+      { email: 'trainer1@test.com', name: 'Bob Trainer', role: 'trainer', phone: '2222222222' },
+      { email: 'trainer2@test.com', name: 'Alice Trainer', role: 'trainer', phone: '2222222223' },
+      { email: 'recruiter1@test.com', name: 'Mike Recruiter', role: 'recruiter', phone: '3333333333' },
+      { email: 'recruiter2@test.com', name: 'Sarah Recruiter', role: 'recruiter', phone: '3333333334' }
+    ];
+    
+    const created = [];
+    const skipped = [];
+    
+    for (const user of testUsers) {
+      try {
+        const existing = await db.query('SELECT id FROM users WHERE email = $1', [user.email]);
+        if (existing.rowCount > 0) {
+          skipped.push(user.email);
+          continue;
+        }
+        
+        const result = await db.query(
+          `INSERT INTO users (email, password_hash, full_name, role, phone, status) 
+           VALUES ($1, $2, $3, $4, $5, 'active') RETURNING id, email, full_name, role`,
+          [user.email, hashedPassword, user.name, user.role, user.phone]
+        );
+        created.push(result.rows[0]);
+      } catch (err) {
+        console.error(`Error creating user ${user.email}:`, err.message);
+      }
+    }
+    
+    res.json({ 
+      success: true,
+      created: created.length,
+      skipped: skipped.length,
+      users: created,
+      message: `Created ${created.length} test users, skipped ${skipped.length} existing users`
+    });
+  } catch (err) {
+    console.error('Error creating test users:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Initialize before starting server
 // v2.2 - Force backend rebuild with defaults
 ensureDatabase().finally(() => {
