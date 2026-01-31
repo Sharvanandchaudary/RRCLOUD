@@ -1101,13 +1101,13 @@ export default function CleanAdminDashboard() {
                     <option value="">Choose student...</option>
                     {students.map(student => (
                       <option key={student.id} value={student.id}>
-                        {student.name}
+                        {student.full_name || student.name}
                       </option>
                     ))}
                   </select>
                   {selectedStudent && (
                     <div className="text-xs bg-gray-50 p-2 rounded">
-                      <div className="font-medium">{selectedStudent.name}</div>
+                      <div className="font-medium">{selectedStudent.full_name || selectedStudent.name}</div>
                       <div className="text-gray-600">{selectedStudent.email}</div>
                       {selectedStudent.phone && <div className="text-gray-600">{selectedStudent.phone}</div>}
                     </div>
@@ -1128,13 +1128,13 @@ export default function CleanAdminDashboard() {
                     <option value="">No trainer assigned</option>
                     {trainers.map(trainer => (
                       <option key={trainer.id} value={trainer.id}>
-                        {trainer.name}
+                        {trainer.full_name || trainer.name}
                       </option>
                     ))}
                   </select>
                   {assignmentForm.trainer_id && (
                     <div className="text-xs bg-green-50 p-2 rounded">
-                      <div className="font-medium">{trainers.find(t => t.id.toString() === assignmentForm.trainer_id)?.name}</div>
+                      <div className="font-medium">{trainers.find(t => t.id.toString() === assignmentForm.trainer_id)?.full_name || trainers.find(t => t.id.toString() === assignmentForm.trainer_id)?.name}</div>
                       <div className="text-gray-600">{trainers.find(t => t.id.toString() === assignmentForm.trainer_id)?.email}</div>
                     </div>
                   )}
@@ -1154,13 +1154,13 @@ export default function CleanAdminDashboard() {
                     <option value="">No recruiter assigned</option>
                     {recruiters.map(recruiter => (
                       <option key={recruiter.id} value={recruiter.id}>
-                        {recruiter.name}
+                        {recruiter.full_name || recruiter.name}
                       </option>
                     ))}
                   </select>
                   {assignmentForm.recruiter_id && (
                     <div className="text-xs bg-purple-50 p-2 rounded">
-                      <div className="font-medium">{recruiters.find(r => r.id.toString() === assignmentForm.recruiter_id)?.name}</div>
+                      <div className="font-medium">{recruiters.find(r => r.id.toString() === assignmentForm.recruiter_id)?.full_name || recruiters.find(r => r.id.toString() === assignmentForm.recruiter_id)?.name}</div>
                       <div className="text-gray-600">{recruiters.find(r => r.id.toString() === assignmentForm.recruiter_id)?.email}</div>
                     </div>
                   )}
@@ -1172,12 +1172,12 @@ export default function CleanAdminDashboard() {
                 <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <h5 className="font-semibold text-blue-800 mb-2">📋 Assignment Preview:</h5>
                   <div className="text-sm text-blue-700">
-                    <div><strong>Student:</strong> {selectedStudent?.name}</div>
+                    <div><strong>Student:</strong> {selectedStudent?.full_name || selectedStudent?.name}</div>
                     {assignmentForm.trainer_id && (
-                      <div><strong>Trainer:</strong> {trainers.find(t => t.id.toString() === assignmentForm.trainer_id)?.name}</div>
+                      <div><strong>Trainer:</strong> {trainers.find(t => t.id.toString() === assignmentForm.trainer_id)?.full_name || trainers.find(t => t.id.toString() === assignmentForm.trainer_id)?.name}</div>
                     )}
                     {assignmentForm.recruiter_id && (
-                      <div><strong>Recruiter:</strong> {recruiters.find(r => r.id.toString() === assignmentForm.recruiter_id)?.name}</div>
+                      <div><strong>Recruiter:</strong> {recruiters.find(r => r.id.toString() === assignmentForm.recruiter_id)?.full_name || recruiters.find(r => r.id.toString() === assignmentForm.recruiter_id)?.name}</div>
                     )}
                   </div>
                 </div>
