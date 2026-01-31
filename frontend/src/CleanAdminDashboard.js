@@ -916,9 +916,20 @@ export default function CleanAdminDashboard() {
                       </td>
                       <td className="px-4 py-4 text-sm">
                         {assignment.trainer_name ? (
-                          <div>
-                            <div className="font-medium text-gray-900">{assignment.trainer_name}</div>
-                            <div className="text-gray-500 text-xs">{assignment.trainer_email}</div>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium text-gray-900">{assignment.trainer_name}</div>
+                              <div className="text-gray-500 text-xs">{assignment.trainer_email}</div>
+                            </div>
+                            {assignment.trainer_assignment_id && (
+                              <button
+                                onClick={() => deleteAssignment(assignment.trainer_assignment_id)}
+                                className="ml-2 text-red-600 hover:text-red-800"
+                                title="Remove trainer"
+                              >
+                                ✕
+                              </button>
+                            )}
                           </div>
                         ) : (
                           <span className="text-gray-400">Not assigned</span>
@@ -926,9 +937,20 @@ export default function CleanAdminDashboard() {
                       </td>
                       <td className="px-4 py-4 text-sm">
                         {assignment.recruiter_name ? (
-                          <div>
-                            <div className="font-medium text-gray-900">{assignment.recruiter_name}</div>
-                            <div className="text-gray-500 text-xs">{assignment.recruiter_email}</div>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium text-gray-900">{assignment.recruiter_name}</div>
+                              <div className="text-gray-500 text-xs">{assignment.recruiter_email}</div>
+                            </div>
+                            {assignment.recruiter_assignment_id && (
+                              <button
+                                onClick={() => deleteAssignment(assignment.recruiter_assignment_id)}
+                                className="ml-2 text-red-600 hover:text-red-800"
+                                title="Remove recruiter"
+                              >
+                                ✕
+                              </button>
+                            )}
                           </div>
                         ) : (
                           <span className="text-gray-400">Not assigned</span>
@@ -939,11 +961,16 @@ export default function CleanAdminDashboard() {
                       </td>
                       <td className="px-4 py-4 text-sm">
                         <button
-                          onClick={() => deleteAssignment(assignment.id)}
+                          onClick={async () => {
+                            if (window.confirm('Delete ALL assignments for this student?')) {
+                              if (assignment.trainer_assignment_id) await deleteAssignment(assignment.trainer_assignment_id);
+                              if (assignment.recruiter_assignment_id) await deleteAssignment(assignment.recruiter_assignment_id);
+                            }
+                          }}
                           className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm"
-                          title="Delete assignment"
+                          title="Delete all assignments for this student"
                         >
-                          🗑️ Delete
+                          🗑️ Delete All
                         </button>
                       </td>
                     </tr>

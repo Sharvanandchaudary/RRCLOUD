@@ -1216,15 +1216,29 @@ app.get('/api/assignments', verifyToken, async (req, res) => {
 
     let assignments;
     if (userRole === 'admin') {
-      // Admin can see all assignments
+      // Admin can see all assignments - group by student and aggregate trainers/recruiters
       assignments = await db.query(`
-        SELECT a.*, 
-               s.full_name as student_name, s.email as student_email,
-               au.full_name as assigned_user_name, au.email as assigned_user_email
-        FROM assignments a
-        JOIN users s ON a.student_id = s.id
-        JOIN users au ON a.assigned_user_id = au.id
-        ORDER BY a.created_at DESC
+        SELECT 
+          s.id as student_id,
+          s.full_name as student_name, 
+          s.email as student_email,
+          MAX(CASE WHEN a.assigned_user_role = 'trainer' THEN t.full_name END) as trainer_name,
+          MAX(CASE WHEN a.assigned_user_role = 'trainer' THEN t.email END) as trainer_email,
+          MAX(CASE WHEN a.assigned_user_role = 'trainer' THEN a.id END) as trainer_assignment_id,
+          MAX(CASE WHEN a.assigned_user_role = 'recruiter' THEN r.full_name END) as recruiter_name,
+          MAX(CASE WHEN a.assigned_user_role = 'recruiter' THEN r.email END) as recruiter_email,
+          MAX(CASE WHEN a.assigned_user_role = 'recruiter' THEN a.id END) as recruiter_assignment_id,
+          MIN(a.created_at) as created_at,
+          COALESCE(MAX(CASE WHEN a.assigned_user_role = 'trainer' THEN a.id END), 
+                   MAX(CASE WHEN a.assigned_user_role = 'recruiter' THEN a.id END)) as id
+        FROM users s
+        LEFT JOIN assignments a ON a.student_id = s.id
+        LEFT JOIN users t ON a.assigned_user_id = t.id AND a.assigned_user_role = 'trainer'
+        LEFT JOIN users r ON a.assigned_user_id = r.id AND a.assigned_user_role = 'recruiter'
+        WHERE s.role = 'student'
+        GROUP BY s.id, s.full_name, s.email
+        HAVING COUNT(a.id) > 0
+        ORDER BY MIN(a.created_at) DESC
       `);
     } else if (userRole === 'student') {
       // Students see their assignments
