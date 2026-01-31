@@ -350,10 +350,6 @@ export default function CleanAdminDashboard() {
       setAssignmentForm({ student_id: '', trainer_id: '', recruiter_id: '' });
       await loadAssignments();
       alert(`${results.length} assignment(s) created successfully!`);
-      } else {
-        const errorText = await res.text();
-        setError(`Failed to create assignment: HTTP ${res.status}: ${errorText}`);
-      }
     } catch (err) {
       console.error('💥 Error creating assignment:', err);
       setError('Network error creating assignment: ' + err.message);
