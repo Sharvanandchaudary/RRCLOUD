@@ -307,19 +307,49 @@ export default function CleanAdminDashboard() {
 
     try {
       const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
-      const res = await fetch(`${backendUrl}/api/assignments`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(assignmentForm)
-      });
+      
+      // Create assignments array - one for trainer, one for recruiter
+      const assignments = [];
+      
+      if (assignmentForm.trainer_id) {
+        assignments.push({
+          student_id: assignmentForm.student_id,
+          assigned_user_id: assignmentForm.trainer_id,
+          assigned_user_role: 'trainer'
+        });
+      }
+      
+      if (assignmentForm.recruiter_id) {
+        assignments.push({
+          student_id: assignmentForm.student_id,
+          assigned_user_id: assignmentForm.recruiter_id,
+          assigned_user_role: 'recruiter'
+        });
+      }
+      
+      // Send each assignment
+      const results = [];
+      for (const assignment of assignments) {
+        const res = await fetch(`${backendUrl}/api/assignments`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(assignment)
+        });
 
-      if (res.ok) {
-        const result = await res.json();
-        console.log('✅ Assignment created:', result);
-        setShowAssignmentModal(false);
-        setAssignmentForm({ student_id: '', trainer_id: '', recruiter_id: '' });
-        await loadAssignments();
-        alert('Assignment created successfully!');
+        if (res.ok) {
+          const result = await res.json();
+          results.push(result);
+          console.log('✅ Assignment created:', result);
+        } else {
+          const errorText = await res.text();
+          throw new Error(`Failed to create assignment: HTTP ${res.status}: ${errorText}`);
+        }
+      }
+      
+      setShowAssignmentModal(false);
+      setAssignmentForm({ student_id: '', trainer_id: '', recruiter_id: '' });
+      await loadAssignments();
+      alert(`${results.length} assignment(s) created successfully!`);
       } else {
         const errorText = await res.text();
         setError(`Failed to create assignment: HTTP ${res.status}: ${errorText}`);
