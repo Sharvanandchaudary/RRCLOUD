@@ -2509,23 +2509,39 @@ app.post('/api/debug/create-test-users', async (req, res) => {
     
     const created = [];
     const skipped = [];
+    const errors = [];
     
     for (const user of testUsers) {
       try {
         const existing = await db.query('SELECT id FROM users WHERE email = $1', [user.email]);
         if (existing.rowCount > 0) {
           skipped.push(user.email);
+          console.log(`User ${user.email} already exists, skipping`);
           continue;
         }
         
-        const result = await db.query(
-          `INSERT INTO users (email, password_hash, full_name, role, phone, status) 
-           VALUES ($1, $2, $3, $4, $5, 'active') RETURNING id, email, full_name, role`,
-          [user.email, hashedPassword, user.name, user.role, user.phone]
-        );
+        let result;
+        try {
+          // Try with phone and status
+          result = await db.query(
+            `INSERT INTO users (email, password_hash, full_name, role, phone, status) 
+             VALUES ($1, $2, $3, $4, $5, 'active') RETURNING id, email, full_name, role`,
+            [user.email, hashedPassword, user.name, user.role, user.phone]
+          );
+        } catch (insertErr) {
+          // Fallback without phone/status
+          console.log(`Trying without phone/status for ${user.email}`);
+          result = await db.query(
+            `INSERT INTO users (email, password_hash, full_name, role) 
+             VALUES ($1, $2, $3, $4) RETURNING id, email, full_name, role`,
+            [user.email, hashedPassword, user.name, user.role]
+          );
+        }
         created.push(result.rows[0]);
+        console.log(`✅ Created user: ${user.email} as ${user.role}`);
       } catch (err) {
-        console.error(`Error creating user ${user.email}:`, err.message);
+        console.error(`❌ Error creating user ${user.email}:`, err.message);
+        errors.push({ email: user.email, error: err.message });
       }
     }
     
@@ -2533,8 +2549,11 @@ app.post('/api/debug/create-test-users', async (req, res) => {
       success: true,
       created: created.length,
       skipped: skipped.length,
+      errors: errors.length,
       users: created,
-      message: `Created ${created.length} test users, skipped ${skipped.length} existing users`
+      skippedEmails: skipped,
+      errorDetails: errors,
+      message: `Created ${created.length} test users, skipped ${skipped.length} existing users, ${errors.length} errors`
     });
   } catch (err) {
     console.error('Error creating test users:', err);
