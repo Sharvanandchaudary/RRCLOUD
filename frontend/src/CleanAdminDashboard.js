@@ -1101,7 +1101,7 @@ export default function CleanAdminDashboard() {
                     <option value="">Choose student...</option>
                     {students.map(student => (
                       <option key={student.id} value={student.id}>
-                        {student.full_name || student.name}
+                        {student.full_name || student.name || student.email}
                       </option>
                     ))}
                   </select>
@@ -1128,7 +1128,7 @@ export default function CleanAdminDashboard() {
                     <option value="">No trainer assigned</option>
                     {trainers.map(trainer => (
                       <option key={trainer.id} value={trainer.id}>
-                        {trainer.full_name || trainer.name}
+                        {trainer.full_name || trainer.name || trainer.email}
                       </option>
                     ))}
                   </select>
@@ -1154,7 +1154,7 @@ export default function CleanAdminDashboard() {
                     <option value="">No recruiter assigned</option>
                     {recruiters.map(recruiter => (
                       <option key={recruiter.id} value={recruiter.id}>
-                        {recruiter.full_name || recruiter.name}
+                        {recruiter.full_name || recruiter.name || recruiter.email}
                       </option>
                     ))}
                   </select>
