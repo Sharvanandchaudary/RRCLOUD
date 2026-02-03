@@ -9,6 +9,9 @@ function StudentDashboard() {
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [assignments, setAssignments] = useState([]);
+  const [trainer, setTrainer] = useState(null);
+  const [recruiter, setRecruiter] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState({});
   
@@ -208,6 +211,29 @@ function StudentDashboard() {
       if (response.ok) {
         const data = await response.json();
         setAssignments(data);
+        
+        // Extract trainer and recruiter from assignments
+        if (data.length > 0) {
+          const trainerAssignment = data.find(a => a.assigned_user_role === 'trainer');
+          const recruiterAssignment = data.find(a => a.assigned_user_role === 'recruiter');
+          
+          if (trainerAssignment) {
+            setTrainer({
+              name: trainerAssignment.assigned_user_name,
+              email: trainerAssignment.assigned_user_email
+            });
+          }
+          
+          if (recruiterAssignment) {
+            setRecruiter({
+              name: recruiterAssignment.assigned_user_name,
+              email: recruiterAssignment.assigned_user_email
+            });
+          }
+          
+          console.log('👨‍🏫 Trainer:', trainerAssignment?.assigned_user_name);
+          console.log('💼 Recruiter:', recruiterAssignment?.assigned_user_name);
+        }
       }
     } catch (error) {
       console.error('Error fetching assignments:', error);

@@ -7,6 +7,7 @@ export default function RecruiterDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [assignedStudents, setAssignedStudents] = useState([]);
 
   useEffect(() => {
     // Check authentication
@@ -18,17 +19,66 @@ export default function RecruiterDashboard() {
       return;
     }
 
+    fetchAssignedStudents();
     fetchApplications();
   }, [navigate]);
+
+  const fetchAssignedStudents = async () => {
+    try {
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const token = localStorage.getItem('auth_token');
+      
+      const response = await fetch(`${backendUrl}/api/assignments`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setAssignedStudents(data);
+        console.log('📋 Assigned students:', data);
+      }
+    } catch (error) {
+      console.error('Error fetching assigned students:', error);
+    }
+  };
 
   const fetchApplications = async () => {
     try {
       const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
-      const apiUrl = backendUrl ? `${backendUrl}/applications` : '/applications';
+      const token = localStorage.getItem('auth_token');
       
-      const response = await fetch(apiUrl);
-      const data = await response.json();
-      setApplications(data);
+      // Fetch all applications first
+      const response = await fetch(`${backendUrl}/api/applications`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const allApps = await response.json();
+        
+        // Filter to show only applications from assigned students
+        const assignedResponse = await fetch(`${backendUrl}/api/assignments`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (assignedResponse.ok) {
+          const assignments = await assignedResponse.json();
+          const studentEmails = assignments.map(a => a.student_email);
+          const filteredApps = allApps.filter(app => studentEmails.includes(app.email));
+          setApplications(filteredApps);
+          console.log('📊 Showing applications from assigned students:', filteredApps.length);
+        } else {
+          setApplications(allApps);
+        }
+      }
     } catch (error) {
       console.error('Error fetching applications:', error);
     } finally {
@@ -342,6 +392,78 @@ export default function RecruiterDashboard() {
             <div style={styles.statLabel}>Pending Review</div>
           </div>
         </div>
+
+        {/* Assigned Students */}
+        {assignedStudents.length > 0 && (
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '20px',
+            padding: '24px',
+            marginBottom: '40px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.2)'
+          }}>
+            <h3 style={{
+              fontSize: '20px',
+              fontWeight: '700',
+              color: '#1e293b',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              👥 My Assigned Students ({assignedStudents.length})
+            </h3>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: '16px'
+            }}>
+              {assignedStudents.map((student, idx) => (
+                <div key={idx} style={{
+                  background: '#f8fafc',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  border: '1px solid #e2e8f0',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}>
+                  <div style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    marginBottom: '8px'
+                  }}>
+                    {student.student_name || student.full_name || 'Student'}
+                  </div>
+                  <div style={{
+                    fontSize: '13px',
+                    color: '#64748b',
+                    marginBottom: '4px'
+                  }}>
+                    📧 {student.student_email || student.email}
+                  </div>
+                  {student.phone && (
+                    <div style={{
+                      fontSize: '13px',
+                      color: '#64748b'
+                    }}>
+                      📱 {student.phone}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Applications Table */}
         <div style={styles.contentCard}>

@@ -5,6 +5,7 @@ export default function TrainerDashboard() {
   const navigate = useNavigate();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [assignedStudents, setAssignedStudents] = useState([]);
 
   useEffect(() => {
     // Check authentication
@@ -16,19 +17,45 @@ export default function TrainerDashboard() {
       return;
     }
 
-    fetchApplications();
+    fetchAssignments();
   }, [navigate]);
 
-  const fetchApplications = async () => {
+  const fetchAssignments = async () => {
     try {
       const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
-      const apiUrl = backendUrl ? `${backendUrl}/applications` : '/applications';
+      const token = localStorage.getItem('auth_token');
       
-      const response = await fetch(apiUrl);
-      const data = await response.json();
-      setApplications(data.filter(app => app.is_approved)); // Only show approved students for training
+      // Fetch assigned students
+      const assignmentsResponse = await fetch(`${backendUrl}/api/assignments`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (assignmentsResponse.ok) {
+        const assignments = await assignmentsResponse.json();
+        setAssignedStudents(assignments);
+        console.log('👨‍🏫 Assigned students:', assignments);
+        
+        // Fetch applications for assigned students
+        const appsResponse = await fetch(`${backendUrl}/api/applications`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (appsResponse.ok) {
+          const allApps = await appsResponse.json();
+          const studentEmails = assignments.map(a => a.student_email);
+          const filteredApps = allApps.filter(app => studentEmails.includes(app.email) && app.is_approved);
+          setApplications(filteredApps);
+          console.log('📊 Training students:', filteredApps.length);
+        }
+      }
     } catch (error) {
-      console.error('Error fetching applications:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -277,6 +304,78 @@ export default function TrainerDashboard() {
             <div style={styles.statLabel}>Active Participation</div>
           </div>
         </div>
+
+        {/* Assigned Students */}
+        {assignedStudents.length > 0 && (
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '20px',
+            padding: '24px',
+            marginBottom: '40px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.2)'
+          }}>
+            <h3 style={{
+              fontSize: '20px',
+              fontWeight: '700',
+              color: '#1e293b',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              🎓 My Assigned Students ({assignedStudents.length})
+            </h3>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: '16px'
+            }}>
+              {assignedStudents.map((student, idx) => (
+                <div key={idx} style={{
+                  background: 'linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  border: '1px solid #c7d2fe',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(124, 58, 237, 0.2)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}>
+                  <div style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    marginBottom: '8px'
+                  }}>
+                    {student.student_name || student.full_name || 'Student'}
+                  </div>
+                  <div style={{
+                    fontSize: '13px',
+                    color: '#64748b',
+                    marginBottom: '4px'
+                  }}>
+                    📧 {student.student_email || student.email}
+                  </div>
+                  {student.phone && (
+                    <div style={{
+                      fontSize: '13px',
+                      color: '#64748b'
+                    }}>
+                      📱 {student.phone}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Students Table */}
         <div style={styles.contentCard}>

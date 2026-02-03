@@ -598,6 +598,61 @@ export default function CleanAdminDashboard() {
               <button onClick={() => setError('')} className="float-right font-bold">×</button>
             </div>
           )}
+          
+          {/* Stats Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-600">Total Applications</p>
+                  <p className="text-3xl font-bold text-blue-900">{applications.length}</p>
+                </div>
+                <div className="text-4xl">📝</div>
+              </div>
+              <p className="text-xs text-blue-700 mt-2">
+                {applications.filter(a => a.is_approved).length} approved
+              </p>
+            </div>
+            
+            <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-600">Total Users</p>
+                  <p className="text-3xl font-bold text-green-900">{users.length}</p>
+                </div>
+                <div className="text-4xl">👥</div>
+              </div>
+              <p className="text-xs text-green-700 mt-2">
+                {users.filter(u => u.role === 'student').length} students, {users.filter(u => u.role === 'trainer').length} trainers, {users.filter(u => u.role === 'recruiter').length} recruiters
+              </p>
+            </div>
+            
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-purple-600">Active Assignments</p>
+                  <p className="text-3xl font-bold text-purple-900">{assignments.length}</p>
+                </div>
+                <div className="text-4xl">🔗</div>
+              </div>
+              <p className="text-xs text-purple-700 mt-2">
+                Student-Mentor mappings
+              </p>
+            </div>
+            
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg border border-orange-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-orange-600">Pending Review</p>
+                  <p className="text-3xl font-bold text-orange-900">{applications.filter(a => !a.is_approved).length}</p>
+                </div>
+                <div className="text-4xl">⏳</div>
+              </div>
+              <p className="text-xs text-orange-700 mt-2">
+                Awaiting approval
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Applications View */}
