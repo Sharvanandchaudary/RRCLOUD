@@ -23,7 +23,6 @@ function StudentDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   
   // Assignment-based Data State
-  const [assignments, setAssignments] = useState([]);
   const [studentData, setStudentData] = useState([]);
   const [trainerTasks, setTrainerTasks] = useState([]);
   const [interviewCalls, setInterviewCalls] = useState([]);
