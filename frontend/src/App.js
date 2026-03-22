@@ -5,7 +5,7 @@ import StudentSignup from './StudentSignup';
 import StudentLogin from './StudentLogin';
 import UnifiedLogin from './UnifiedLogin';
 import StudentDashboard from './StudentDashboard';
-import AdminDashboard from './ModernAdminDashboard';
+import AdminDashboard from './CleanAdminDashboard';
 import TrainerDashboard from './NewTrainerDashboard';
 import RecruiterDashboard from './RecruiterDashboard';
 import AccountSetup from './AccountSetup';
