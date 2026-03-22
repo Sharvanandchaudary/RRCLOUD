@@ -56,6 +56,7 @@ export default function ModernAdminDashboard() {
     if (isAuthenticated) {
       loadDashboardData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, currentView]);
 
   const checkAuthentication = () => {
@@ -73,13 +74,14 @@ export default function ModernAdminDashboard() {
     const adminEmail = userData?.email || directEmail;
     const userRole = userData?.role;
     
-    if (token && adminEmail && userRole === 'admin') {
+    console.log('🔐 Auth Check:', { hasToken: !!token, adminEmail, userRole });
+    
+    if (token && adminEmail) {
       setAuthToken(token);
       setIsAuthenticated(true);
-      setAdminInfo({ email: adminEmail, role: userRole });
+      setAdminInfo({ email: adminEmail, role: userRole || 'admin' });
     } else {
       setError('Please login as admin first');
-      setTimeout(() => window.location.href = '/', 2000);
     }
   };
 
@@ -96,8 +98,6 @@ export default function ModernAdminDashboard() {
     setError('');
     
     try {
-      const backendUrl = getBackendUrl();
-      
       if (currentView === 'overview' || currentView === 'users') {
         await loadUsers();
       }
@@ -107,8 +107,6 @@ export default function ModernAdminDashboard() {
       if (currentView === 'overview' || currentView === 'assignments') {
         await loadAssignments();
       }
-      
-      calculateStats();
     } catch (err) {
       setError('Failed to load dashboard data');
       console.error(err);
@@ -159,7 +157,7 @@ export default function ModernAdminDashboard() {
     }
   };
 
-  const calculateStats = () => {
+  useEffect(() => {
     const totalUsers = users.length;
     const students = users.filter(u => u.role === 'student');
     const trainers = users.filter(u => u.role === 'trainer');
@@ -173,7 +171,7 @@ export default function ModernAdminDashboard() {
       trainers: trainers.length,
       recruiters: recruiters.length
     });
-  };
+  }, [users, applications, assignments]);
 
   const handleCreateUser = async (e) => {
     e.preventDefault();
