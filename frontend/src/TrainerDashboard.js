@@ -75,32 +75,34 @@ export default function TrainerDashboard() {
   const styles = {
     container: {
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-      fontFamily: "'Inter', sans-serif"
+      background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 50%, #8b5cf6 100%)',
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
     },
     header: {
-      background: 'rgba(255, 255, 255, 0.95)',
-      backdropFilter: 'blur(20px)',
-      borderBottom: '1px solid rgba(226, 232, 240, 0.5)',
-      padding: '20px 40px',
+      background: 'rgba(255, 255, 255, 0.98)',
+      backdropFilter: 'blur(25px)',
+      borderBottom: '2px solid rgba(226, 232, 240, 0.6)',
+      padding: '24px 48px',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
       position: 'sticky',
       top: 0,
-      zIndex: 1000
+      zIndex: 1000,
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
     },
     logo: {
       display: 'flex',
       alignItems: 'center',
-      gap: '12px'
+      gap: '16px'
     },
     logoText: {
-      fontSize: '28px',
-      fontWeight: '800',
-      background: 'linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%)',
+      fontSize: '32px',
+      fontWeight: '900',
+      background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)',
       WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent'
+      WebkitTextFillColor: 'transparent',
+      letterSpacing: '-0.5px'
     },
     userInfo: {
       display: 'flex',

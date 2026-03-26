@@ -542,153 +542,236 @@ export default function CleanAdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm mb-6 p-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">Admin Dashboard</h1>
-          
-          {/* Navigation */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            <button
-              onClick={() => setCurrentView('applications')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                currentView === 'applications'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              📝 Applications ({applications.length})
-            </button>
-            <button
-              onClick={() => setCurrentView('users')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                currentView === 'users'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              👥 User Management ({users.length})
-            </button>
-            <button
-              onClick={() => setCurrentView('assignments')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                currentView === 'assignments'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              🔗 Assignments ({assignments.length})
-            </button>
-            <button
-              onClick={() => setCurrentView('email-test')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                currentView === 'email-test'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              📧 Test Email
-            </button>
+    <div className="min-h-screen" style={{
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    }}>
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        {/* Enhanced Professional Header */}
+        <div className="mb-8 rounded-2xl overflow-hidden shadow-2xl" style={{
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.3)'
+        }}>
+          <div className="p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="text-4xl">👑</div>
+                  <h1 className="text-4xl font-extrabold" style={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    letterSpacing: '-0.5px'
+                  }}>Corporate Admin Dashboard</h1>
+                </div>
+                <div className="flex items-center gap-2 ml-16">
+                  <span className="px-4 py-1.5 rounded-full text-xs font-bold" style={{
+                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    color: 'white',
+                    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
+                  }}>ENTERPRISE ADMIN • FULL CONTROL ACCESS</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => window.location.href = '/'}
+                className="px-6 py-3 rounded-xl font-semibold text-white transition-all duration-300 hover:scale-105"
+                style={{
+                  background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
+                  boxShadow: '0 4px 15px rgba(220, 38, 38, 0.3)'
+                }}
+              >
+                🚪 Logout
+              </button>
+            </div>
+            
+            {/* Enhanced Navigation */}
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => setCurrentView('applications')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${
+                  currentView === 'applications'
+                    ? 'text-white shadow-lg'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200'
+                }`}
+                style={currentView === 'applications' ? {
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
+                } : {}}
+              >
+                📝 Applications <span className="ml-2 px-2 py-0.5 bg-white bg-opacity-20 rounded-full text-xs">{applications.length}</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('users')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${
+                  currentView === 'users'
+                    ? 'text-white shadow-lg'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200'
+                }`}
+                style={currentView === 'users' ? {
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  boxShadow: '0 4px 20px rgba(16, 185, 129, 0.4)'
+                } : {}}
+              >
+                👥 User Management <span className="ml-2 px-2 py-0.5 bg-white bg-opacity-20 rounded-full text-xs">{users.length}</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('assignments')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${
+                  currentView === 'assignments'
+                    ? 'text-white shadow-lg'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200'
+                }`}
+                style={currentView === 'assignments' ? {
+                  background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+                  boxShadow: '0 4px 20px rgba(139, 92, 246, 0.4)'
+                } : {}}
+              >
+                🔗 Assignments <span className="ml-2 px-2 py-0.5 bg-white bg-opacity-20 rounded-full text-xs">{assignments.length}</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('email-test')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${
+                  currentView === 'email-test'
+                    ? 'text-white shadow-lg'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200'
+                }`}
+                style={currentView === 'email-test' ? {
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  boxShadow: '0 4px 20px rgba(245, 158, 11, 0.4)'
+                } : {}}
+              >
+                📧 Test Email
+              </button>
+            </div>
           </div>
           
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
-              <button onClick={() => setError('')} className="float-right font-bold">×</button>
+            <div className="mx-8 mb-8 p-4 rounded-xl border-2 border-red-300" style={{
+              background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)'
+            }}>
+              <div className="flex items-center justify-between">
+                <span className="text-red-700 font-semibold">{error}</span>
+                <button onClick={() => setError('')} className="text-red-700 font-bold text-xl hover:scale-110 transition-transform">×</button>
+              </div>
             </div>
           )}
           
-          {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-blue-600">Total Applications</p>
-                  <p className="text-3xl font-bold text-blue-900">{applications.length}</p>
+          {/* Enhanced Stats Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 px-8 pb-8">
+            <div className="rounded-2xl p-6 transform hover:scale-105 transition-all duration-300 cursor-pointer" style={{
+              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              boxShadow: '0 10px 30px rgba(59, 130, 246, 0.3)'
+            }}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-6xl opacity-20">📝</div>
+                <div className="px-3 py-1 rounded-full text-xs font-bold bg-white bg-opacity-20 text-white">
+                  {applications.filter(a => a.is_approved).length} approved
                 </div>
-                <div className="text-4xl">📝</div>
               </div>
-              <p className="text-xs text-blue-700 mt-2">
-                {applications.filter(a => a.is_approved).length} approved
+              <p className="text-white text-sm font-semibold mb-2 opacity-90">TOTAL APPLICATIONS</p>
+              <p className="text-white text-5xl font-extrabold">{applications.length}</p>
+            </div>
+            
+            <div className="rounded-2xl p-6 transform hover:scale-105 transition-all duration-300 cursor-pointer" style={{
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              boxShadow: '0 10px 30px rgba(16, 185, 129, 0.3)'
+            }}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-6xl opacity-20">👥</div>
+                <div className="px-3 py-1 rounded-full text-xs font-bold bg-white bg-opacity-20 text-white">
+                  Active
+                </div>
+              </div>
+              <p className="text-white text-sm font-semibold mb-2 opacity-90">TOTAL USERS</p>
+              <p className="text-white text-5xl font-extrabold">{users.length}</p>
+              <p className="text-white text-xs mt-3 opacity-80">
+                {users.filter(u => u.role === 'student').length} students • {users.filter(u => u.role === 'trainer').length} trainers • {users.filter(u => u.role === 'recruiter').length} recruiters
               </p>
             </div>
             
-            <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-green-600">Total Users</p>
-                  <p className="text-3xl font-bold text-green-900">{users.length}</p>
+            <div className="rounded-2xl p-6 transform hover:scale-105 transition-all duration-300 cursor-pointer" style={{
+              background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+              boxShadow: '0 10px 30px rgba(139, 92, 246, 0.3)'
+            }}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-6xl opacity-20">🔗</div>
+                <div className="px-3 py-1 rounded-full text-xs font-bold bg-white bg-opacity-20 text-white">
+                  Mapped
                 </div>
-                <div className="text-4xl">👥</div>
               </div>
-              <p className="text-xs text-green-700 mt-2">
-                {users.filter(u => u.role === 'student').length} students, {users.filter(u => u.role === 'trainer').length} trainers, {users.filter(u => u.role === 'recruiter').length} recruiters
-              </p>
+              <p className="text-white text-sm font-semibold mb-2 opacity-90">ACTIVE ASSIGNMENTS</p>
+              <p className="text-white text-5xl font-extrabold">{assignments.length}</p>
+              <p className="text-white text-xs mt-3 opacity-80">Student-Mentor mappings</p>
             </div>
             
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-purple-600">Active Assignments</p>
-                  <p className="text-3xl font-bold text-purple-900">{assignments.length}</p>
+            <div className="rounded-2xl p-6 transform hover:scale-105 transition-all duration-300 cursor-pointer" style={{
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              boxShadow: '0 10px 30px rgba(245, 158, 11, 0.3)'
+            }}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-6xl opacity-20">⏳</div>
+                <div className="px-3 py-1 rounded-full text-xs font-bold bg-white bg-opacity-20 text-white">
+                  Awaiting
                 </div>
-                <div className="text-4xl">🔗</div>
               </div>
-              <p className="text-xs text-purple-700 mt-2">
-                Student-Mentor mappings
-              </p>
-            </div>
-            
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg border border-orange-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-orange-600">Pending Review</p>
-                  <p className="text-3xl font-bold text-orange-900">{applications.filter(a => !a.is_approved).length}</p>
-                </div>
-                <div className="text-4xl">⏳</div>
-              </div>
-              <p className="text-xs text-orange-700 mt-2">
-                Awaiting approval
-              </p>
+              <p className="text-white text-sm font-semibold mb-2 opacity-90">PENDING REVIEW</p>
+              <p className="text-white text-5xl font-extrabold">{applications.filter(a => !a.is_approved).length}</p>
+              <p className="text-white text-xs mt-3 opacity-80">Needs approval</p>
             </div>
           </div>
         </div>
 
-        {/* Applications View */}
+        {/* Enhanced Applications View */}
         {currentView === 'applications' && (
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">Applications Management</h2>
-              <div className="flex gap-4">
+          <div className="rounded-2xl overflow-hidden" style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px)',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+            border: '1px solid rgba(255, 255, 255, 0.3)'
+          }}>
+            <div className="p-8">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-3xl font-extrabold" style={{
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}>Applications Management</h2>
+                  <p className="text-gray-600 mt-1">Manage and review student applications</p>
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap gap-3 mb-6">
                 <input
                   type="text"
-                  placeholder="Search applications..."
+                  placeholder="🔍 Search applications..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
+                  className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all"
+                  style={{ minWidth: '250px' }}
                 />
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
+                  className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all"
                 >
-                  <option value="all">All Status</option>
-                  <option value="APPLIED">Applied</option>
-                  <option value="approved">Approved</option>
+                  <option value="all">📋 All Status</option>
+                  <option value="APPLIED">📝 Applied</option>
+                  <option value="approved">✅ Approved</option>
                 </select>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
+                  className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all"
                 >
-                  <option value="created_at">Sort by Date</option>
-                  <option value="full_name">Sort by Name</option>
-                  <option value="status">Sort by Status</option>
+                  <option value="created_at">📅 Sort by Date</option>
+                  <option value="full_name">👤 Sort by Name</option>
+                  <option value="status">📊 Sort by Status</option>
                 </select>
                 <button
                   onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                  className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100"
+                  className="px-4 py-3 border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-all font-semibold"
                 >
                   {sortOrder === 'asc' ? '↑' : '↓'}
                 </button>
