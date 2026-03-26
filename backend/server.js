@@ -8,6 +8,7 @@ const { Storage } = require('@google-cloud/storage');
 require('dotenv').config();
 const db = require('./db');
 const fs = require('fs');
+const jiraService = require('./jira-service');
 
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_jwt_secret';
@@ -2252,6 +2253,84 @@ app.post('/api/admin/reset-credentials', async (req, res) => {
       error: 'Failed to reset admin credentials',
       details: err.message
     });
+  }
+});
+
+/* -------------------- JIRA INTEGRATION ENDPOINTS -------------------- */
+
+// Get all Jira issues for a project
+app.get('/api/jira/issues', authenticateToken, async (req, res) => {
+  try {
+    const projectKey = req.query.project || process.env.JIRA_PROJECT_KEY;
+    const issues = await jiraService.getIssues(projectKey);
+    
+    res.json({
+      success: true,
+      issues: issues,
+      count: issues.length
+    });
+  } catch (error) {
+    console.error('Error fetching Jira issues:', error);
+    res.status(500).json({ error: 'Failed to fetch Jira issues' });
+  }
+});
+
+// Get Jira issues for current user
+app.get('/api/jira/my-issues', authenticateToken, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const issues = await jiraService.getUserIssues(userEmail);
+    
+    res.json({
+      success: true,
+      issues: issues,
+      count: issues.length
+    });
+  } catch (error) {
+    console.error('Error fetching user Jira issues:', error);
+    res.status(500).json({ error: 'Failed to fetch your Jira issues' });
+  }
+});
+
+// Create a new Jira issue
+app.post('/api/jira/issue', authenticateToken, async (req, res) => {
+  try {
+    const { title, description, type, priority, assignee } = req.body;
+    
+    if (!title) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+
+    const result = await jiraService.createIssue({
+      title,
+      description,
+      type: type || 'Task',
+      priority: priority || 'Medium',
+      assignee
+    });
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error creating Jira issue:', error);
+    res.status(500).json({ error: 'Failed to create Jira issue' });
+  }
+});
+
+// Update Jira issue status
+app.put('/api/jira/issue/:key/status', authenticateToken, async (req, res) => {
+  try {
+    const { key } = req.params;
+    const { status } = req.body;
+    
+    if (!status) {
+      return res.status(400).json({ error: 'Status is required' });
+    }
+
+    const result = await jiraService.updateIssueStatus(key, status);
+    res.json(result);
+  } catch (error) {
+    console.error('Error updating Jira issue status:', error);
+    res.status(500).json({ error: 'Failed to update Jira issue status' });
   }
 });
 

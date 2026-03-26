@@ -5,6 +5,7 @@ import StudentSignup from './StudentSignup';
 import StudentLogin from './StudentLogin';
 import UnifiedLogin from './UnifiedLogin';
 import StudentDashboard from './StudentDashboard';
+import EnhancedStudentJiraDashboard from './EnhancedStudentJiraDashboard';
 import AdminDashboard from './CleanAdminDashboard';
 import TrainerDashboard from './NewTrainerDashboard';
 import RecruiterDashboard from './RecruiterDashboard';
@@ -219,6 +220,7 @@ export default function App() {
         <Route path="/student-login" element={<StudentLogin />} />
         <Route path="/account-setup" element={<AccountSetup />} />
         <Route path="/account-creation" element={<StudentAccountCreation />} />
+        <Route path="/dashboard" element={<EnhancedStudentJiraDashboard />} />
         <Route path="/student-dashboard" element={<StudentDashboard />} />
         <Route path="/recruiter-dashboard" element={<RecruiterDashboard />} />
         <Route path="/trainer-dashboard" element={<TrainerDashboard />} />
