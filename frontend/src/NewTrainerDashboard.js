@@ -52,7 +52,7 @@ export default function TrainerDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       
       // Fetch applications/students
       const appsRes = await fetch(`${backendUrl}/api/applications`);
@@ -92,7 +92,7 @@ export default function TrainerDashboard() {
     }
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const taskData = {
         ...taskForm,
         task_date: new Date().toISOString().split('T')[0] // Today's date
@@ -123,7 +123,7 @@ export default function TrainerDashboard() {
 
   const updateTaskStatus = async (taskId, status) => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const res = await fetch(`${backendUrl}/api/trainer-tasks/${taskId}`, {
         method: 'PUT',
         headers: getAuthHeaders(),

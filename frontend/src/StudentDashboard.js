@@ -203,7 +203,7 @@ function StudentDashboard() {
   const fetchAssignments = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const response = await fetch(`${backendUrl}/api/assignments`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -242,7 +242,7 @@ function StudentDashboard() {
   const fetchStudentData = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const response = await fetch(`${backendUrl}/api/student-data`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -258,7 +258,7 @@ function StudentDashboard() {
   const fetchTrainerTasks = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const response = await fetch(`${backendUrl}/api/trainer-tasks`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -274,7 +274,7 @@ function StudentDashboard() {
   const fetchInterviewCalls = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const response = await fetch(`${backendUrl}/api/interview-calls`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -290,7 +290,7 @@ function StudentDashboard() {
   const handleCreateInterviewCall = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const response = await fetch(`${backendUrl}/api/interview-calls`, {
         method: 'POST',
         headers: {
@@ -324,7 +324,7 @@ function StudentDashboard() {
   const handleTaskStatusUpdate = async (taskId, newStatus) => {
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const response = await fetch(`${backendUrl}/api/trainer-tasks/${taskId}`, {
         method: 'PUT',
         headers: {
@@ -347,7 +347,7 @@ function StudentDashboard() {
 
   const fetchUserProfile = async (token) => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const response = await fetch(`${backendUrl}/auth/me`, {
         method: 'GET',
         headers: {
@@ -376,7 +376,7 @@ function StudentDashboard() {
 
   const fetchApplication = async (email, token) => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const response = await fetch(`${backendUrl}/api/applications/${email}`, {
         method: 'GET',
         headers: {
@@ -402,7 +402,7 @@ function StudentDashboard() {
 
   const fetchTasks = async () => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${backendUrl}/api/student/tasks`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -421,7 +421,7 @@ function StudentDashboard() {
 
   const fetchVisualizationData = async () => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${backendUrl}/api/student/analytics`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -440,7 +440,7 @@ function StudentDashboard() {
   const handleTaskSubmit = async (e) => {
     e.preventDefault();
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${backendUrl}/api/student/tasks`, {
         method: 'POST',
@@ -463,7 +463,7 @@ function StudentDashboard() {
 
   const handleTaskComplete = async (taskId) => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${backendUrl}/api/student/tasks/${taskId}/complete`, {
         method: 'PUT',
@@ -488,7 +488,7 @@ function StudentDashboard() {
     formData.append('file', file);
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${backendUrl}/api/student/upload-data`, {
         method: 'POST',

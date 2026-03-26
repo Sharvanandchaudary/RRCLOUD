@@ -101,7 +101,7 @@ export default function CleanAdminDashboard() {
   const loadApplications = async () => {
     try {
       setLoading(true);
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const res = await fetch(`${backendUrl}/api/applications`);
       if (res.ok) {
         const data = await res.json();
@@ -125,7 +125,7 @@ export default function CleanAdminDashboard() {
     
     try {
       setLoading(true);
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const url = `${backendUrl}/api/users`;
       
       console.log('🔄 Loading users from:', url);
@@ -157,7 +157,7 @@ export default function CleanAdminDashboard() {
 
   const loadTrainersAndRecruiters = async () => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       console.log('🔄 Loading users for assignment dropdowns...');
       const res = await fetch(`${backendUrl}/api/users`, {
         headers: getAuthHeaders()
@@ -189,7 +189,7 @@ export default function CleanAdminDashboard() {
 
   const loadAssignments = async () => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const res = await fetch(`${backendUrl}/api/assignments`, {
         headers: getAuthHeaders()
       });
@@ -215,7 +215,7 @@ export default function CleanAdminDashboard() {
 
     try {
       setLoading(true);
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const res = await fetch(`${backendUrl}/api/test-email`, {
         method: 'POST',
         headers: {
@@ -250,7 +250,7 @@ export default function CleanAdminDashboard() {
     }
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const res = await fetch(`${backendUrl}/api/users`, {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -280,7 +280,7 @@ export default function CleanAdminDashboard() {
     }
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const res = await fetch(`${backendUrl}/api/users/${userId}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
@@ -306,7 +306,7 @@ export default function CleanAdminDashboard() {
     }
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       
       // Create assignments array - one for trainer, one for recruiter
       const assignments = [];
@@ -362,7 +362,7 @@ export default function CleanAdminDashboard() {
     }
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const res = await fetch(`${backendUrl}/api/assignments/${assignmentId}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
@@ -382,7 +382,7 @@ export default function CleanAdminDashboard() {
 
   const approveApplication = async (appId) => {
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const res = await fetch(`${backendUrl}/api/applications/${appId}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -414,7 +414,7 @@ export default function CleanAdminDashboard() {
     }
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const promises = selectedApps.map(appId => 
         fetch(`${backendUrl}/api/applications/${appId}/approve`, {
           method: 'POST',
@@ -442,7 +442,7 @@ export default function CleanAdminDashboard() {
     }
 
     try {
-      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-nsmgws4u4a-uc.a.run.app';
+      const backendUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 'https://rrcloud-backend-415414350152.us-central1.run.app';
       const res = await fetch(`${backendUrl}/api/applications/${appId}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
